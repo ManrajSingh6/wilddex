@@ -26,9 +26,6 @@ export function authenticateToken(
 
   const authHeader = req.headers.authorization;
 
-  console.log("authHeader", authHeader);
-  console.log("req.path", req.path);
-
   const token = authHeader && authHeader.split(" ")[1];
 
   if (token == undefined) {
