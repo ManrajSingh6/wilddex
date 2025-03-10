@@ -4,6 +4,7 @@ import {
   COMMUNITY_POSTS_ROUTE,
   HOME_ROUTE,
   LOGIN_ROUTE,
+  NOTIFICATIONS_ROUTE,
   PROFILE_ROUTE,
   ProtectedRoute,
   REGISTER_ROUTE,
@@ -17,6 +18,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "./components/ui/toaster";
 import { APIProvider } from "@vis.gl/react-google-maps";
 import { CommunityPage } from "./pages/CommunityPage";
+import { NotificationsPage } from "./pages/NotificationsPage";
+import { NotificationsProvider } from "./context/notificationsContext";
 
 export const BASE_API_URL = `${
   import.meta.env.VITE_BACKEND_API_URL
@@ -32,25 +35,31 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
-          <Routes>
-            <Route path={LOGIN_ROUTE} element={<LoginPage />} />
-            <Route path={REGISTER_ROUTE} element={<RegisterPage />} />
-            <Route element={<ProtectedRoute />}>
-              <Route element={<Layout />}>
-                <Route path={HOME_ROUTE} element={<HomePage />} />
-                <Route path={PROFILE_ROUTE} element={<ProfilePage />} />
-                <Route
-                  path={COMMUNITY_POSTS_ROUTE}
-                  element={<CommunityPage />}
-                />
+        <NotificationsProvider>
+          <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
+            <Routes>
+              <Route path={LOGIN_ROUTE} element={<LoginPage />} />
+              <Route path={REGISTER_ROUTE} element={<RegisterPage />} />
+              <Route element={<ProtectedRoute />}>
+                <Route element={<Layout />}>
+                  <Route path={HOME_ROUTE} element={<HomePage />} />
+                  <Route
+                    path={NOTIFICATIONS_ROUTE}
+                    element={<NotificationsPage />}
+                  />
+                  <Route path={PROFILE_ROUTE} element={<ProfilePage />} />
+                  <Route
+                    path={COMMUNITY_POSTS_ROUTE}
+                    element={<CommunityPage />}
+                  />
+                </Route>
               </Route>
-            </Route>
-            {/* Redirect invalid routes to landing page for non-authenticated users */}
-            <Route path="*" element={<Navigate to={HOME_ROUTE} replace />} />
-          </Routes>
-          <Toaster />
-        </APIProvider>
+              {/* Redirect invalid routes to landing page for non-authenticated users */}
+              <Route path="*" element={<Navigate to={HOME_ROUTE} replace />} />
+            </Routes>
+            <Toaster />
+          </APIProvider>
+        </NotificationsProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

@@ -1,4 +1,5 @@
 export interface NewPostUpvoteNotification {
+  notificationId: string;
   postId: number;
   postTitle: string;
   upvoteCount: number;
@@ -10,6 +11,7 @@ export interface NewPostUpvoteNotification {
 }
 
 export interface NewPostNotification {
+  notificationId: string;
   postId: number;
   postTitle: string;
   postedBy: {

@@ -148,15 +148,55 @@ export function AddSightingModal({
     if (isOpen && navigator.geolocation) {
       initializeCamera("user");
 
-      navigator.geolocation.getCurrentPosition((pos) => {
-        setFormData({
-          ...formData,
-          location: {
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
+      let retryTimeout: ReturnType<typeof setTimeout>;
+
+      // Optional: set a limit to avoid infinite retries.
+      let retries = 0;
+      const maxRetries = 5;
+
+      const attemptGetPosition = () => {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            // Success: update your form data with the user's location.
+            setFormData((prev) => ({
+              ...prev,
+              location: {
+                lat: pos.coords.latitude,
+                lng: pos.coords.longitude,
+              },
+            }));
           },
-        });
-      });
+          (error) => {
+            // Check if the error indicates that the location is temporarily unavailable.
+            // POSITION_UNAVAILABLE (code 2) is commonly used.
+            if (
+              error.code === error.POSITION_UNAVAILABLE &&
+              retries < maxRetries
+            ) {
+              console.warn("Location unavailable, retrying...");
+              retries++;
+              retryTimeout = setTimeout(attemptGetPosition, 3000); // Retry after 3 seconds.
+            } else {
+              console.error("Error getting location:", error.message);
+              // Optionally handle other errors (like permission denied or timeout).
+            }
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0,
+          }
+        );
+      };
+
+      attemptGetPosition();
+
+      return () => {
+        // Cleanup: clear any pending timeout, stop camera, and reset form data.
+        clearTimeout(retryTimeout);
+        stopCamera();
+        setFormData(getDefaultFormData());
+      };
     } else {
       stopCamera();
       setFormData(getDefaultFormData());

@@ -6,6 +6,7 @@ export const HOME_ROUTE = "/home";
 export const LOGIN_ROUTE = "/login";
 export const REGISTER_ROUTE = "/register";
 export const PROFILE_ROUTE = "/profile";
+export const NOTIFICATIONS_ROUTE = "/notifications";
 export const COMMUNITY_POSTS_ROUTE = "/community-posts";
 
 export function ProtectedRoute(): JSX.Element {
