@@ -15,6 +15,7 @@ export const AUTH_TOKEN_KEY = "auth_token";
 
 export interface AuthContextType {
   readonly user: User | null;
+  readonly userToken: string | null;
   readonly login: (email: string, password: string) => Promise<void>;
   readonly register: (input: RegisterFormData) => Promise<void>;
   readonly logout: () => void;
@@ -32,6 +33,7 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
+  const [userToken, setUserToken] = useState<string | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   const loginMutation = useMutation({
@@ -54,8 +56,10 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     onSuccess: (
       successResponse: ApiResponse<{ token: string; user: User }>
     ) => {
+      const token = successResponse.data.token;
       setUser(successResponse.data.user);
-      localStorage.setItem(AUTH_TOKEN_KEY, successResponse.data.token);
+      localStorage.setItem(AUTH_TOKEN_KEY, token);
+      setUserToken(token);
       toast({
         title: "Welcome back!",
         description: "Successfully logged in.",
@@ -142,8 +146,10 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     const refreshData: ApiResponse<{ token: string; user: User }> =
       await refreshResponse.json();
 
+    const token = refreshData.data.token;
     setUser(refreshData.data.user);
-    localStorage.setItem(AUTH_TOKEN_KEY, refreshData.data.token);
+    setUserToken(token);
+    localStorage.setItem(AUTH_TOKEN_KEY, token);
     setIsAuthLoading(false);
   }
 
@@ -163,6 +169,7 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
     <AuthContext.Provider
       value={{
         user,
+        userToken,
         isAuthenticated: user !== null,
         login,
         register,

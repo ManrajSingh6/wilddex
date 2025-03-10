@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useToast } from "./use-toast";
 import { ApiResponse } from "@/types/apiTypes";
 import { BASE_API_URL } from "@/App";
+import { useAuth } from "./useAuth";
 
 interface UseFetchUserUpvotesReturn {
   readonly userUpvotedPostIds: readonly number[];
@@ -16,6 +17,7 @@ export function useFetchUserUpvotes({
   userId: number | undefined;
 }): UseFetchUserUpvotesReturn {
   const { toast } = useToast();
+  const { userToken } = useAuth();
 
   const { isPending, isError, data, refetch } = useQuery({
     queryKey: ["userUpvotedPostIds", userId],
@@ -28,6 +30,7 @@ export function useFetchUserUpvotes({
         method: "GET",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${userToken}`,
         },
       });
 

@@ -2,6 +2,7 @@ import { AddSightingFormData } from "@/components/addSightingModal";
 import { useToast } from "./use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { BASE_API_URL } from "@/App";
+import { useAuth } from "./useAuth";
 
 type NewSightingInput = AddSightingFormData & { userId: number };
 
@@ -13,6 +14,7 @@ interface UseAddSightingReturn {
 
 export function useAddSighting(): UseAddSightingReturn {
   const { toast } = useToast();
+  const { userToken } = useAuth();
 
   const addSightMutation = useMutation({
     mutationFn: async (sighting: NewSightingInput) => {
@@ -24,6 +26,7 @@ export function useAddSighting(): UseAddSightingReturn {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${userToken}`,
         },
         body: JSON.stringify({
           userId: sighting.userId,

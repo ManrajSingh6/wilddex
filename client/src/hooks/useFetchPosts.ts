@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useToast } from "./use-toast";
 import { ApiResponse } from "@/types/apiTypes";
 import { BASE_API_URL } from "@/App";
+import { useAuth } from "./useAuth";
 
 interface UseFetchPostsReturn {
   readonly posts: readonly Post[];
@@ -17,6 +18,7 @@ export function useFetchPosts({
   userId: number | undefined;
 }): UseFetchPostsReturn {
   const { toast } = useToast();
+  const { userToken } = useAuth();
 
   const endpoint = userId ? `posts/${userId}` : `posts`;
 
@@ -27,6 +29,7 @@ export function useFetchPosts({
         method: "GET",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${userToken}`,
         },
       });
 

@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "./use-toast";
 import { BASE_API_URL } from "@/App";
+import { useAuth } from "./useAuth";
 
 interface PostVoteRequest {
   postId: number;
@@ -21,6 +22,7 @@ export function useVotePost({
   onSuccess?: () => void;
 }): UseVotePostReturn {
   const { toast } = useToast();
+  const { userToken } = useAuth();
 
   const votePostMutation = useMutation({
     mutationFn: async ({ postId, operation }: PostVoteRequest) => {
@@ -29,6 +31,7 @@ export function useVotePost({
         body: JSON.stringify({ id: postId, operation, userId }),
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${userToken}`,
         },
       });
 
