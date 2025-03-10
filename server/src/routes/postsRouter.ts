@@ -166,6 +166,7 @@ postsRouter.post("/create", async (req: CreatePostRequestBody, res) => {
     method: "POST",
     headers: {
       Authorization: `Bearer ${process.env.OPEN_ROUTER_API_KEY ?? ""}`,
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
       model: "cognitivecomputations/dolphin3.0-r1-mistral-24b:free",
@@ -193,10 +194,10 @@ postsRouter.post("/create", async (req: CreatePostRequestBody, res) => {
 
   const openRouterResponseJSON = await openRouterResponse.json();
 
+  // console.log(openRouterResponseJSON.choices[0].message.content);
+
   const openRouterResponseText =
-    openRouterResponseJSON.choices[0].message.content.split(
-      RESPONSE_DELIMITER
-    )[1];
+    openRouterResponseJSON.choices[0].message.content;
 
   // Save the image to cloud storage
   const filePath = `uploads/${uniqueImageName}`;
@@ -225,7 +226,9 @@ postsRouter.post("/create", async (req: CreatePostRequestBody, res) => {
     userId: user.id,
     animal: classification,
     notes: notes ?? null,
-    conservationNotes: openRouterResponseText || "",
+    conservationNotes:
+      openRouterResponseText ||
+      `Here are some conservation notes for ${classification}`,
     imageUrl: data.publicUrl,
     latitude,
     longitude,

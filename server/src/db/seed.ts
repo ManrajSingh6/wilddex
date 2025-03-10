@@ -59,7 +59,7 @@ async function seedDatabase() {
           animal: type,
           notes: `I saw this cool ${type} today in the park!`,
           conservationNotes: faker.lorem.sentences(3),
-          imageUrl: faker.image.urlPicsumPhotos({ width: 400, height: 400 }),
+          imageUrl: getAnimalImageUrl(type),
           latitude: faker.location.latitude(),
           longitude: faker.location.longitude(),
           createdAt: faker.date.recent({ days: 30 }),
@@ -76,6 +76,14 @@ async function seedDatabase() {
         });
       }
     }
+  }
+
+  function getAnimalImageUrl(
+    animal: string,
+    width: number = 400,
+    height: number = 400
+  ): string {
+    return `https://loremflickr.com/${width}/${height}/${animal}`;
   }
 
   console.log("Database seeded successfully!");
