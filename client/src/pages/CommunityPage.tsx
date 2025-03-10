@@ -1,4 +1,4 @@
-import { JSX, useState } from "react";
+import { JSX, useEffect, useState } from "react";
 import "../styles/community-page.css";
 import { useFetchPosts } from "@/hooks/useFetchPosts";
 import { PostCard } from "@/components/postCard";
@@ -12,6 +12,7 @@ import {
 } from "@/utils/sorting";
 import { useFetchUserUpvotes } from "@/hooks/useFetchUserUpvotes";
 import { useAuth } from "@/hooks/useAuth";
+import { useNotifications } from "@/hooks/useNotifications";
 
 export function CommunityPage(): JSX.Element {
   const { user } = useAuth();
@@ -19,6 +20,14 @@ export function CommunityPage(): JSX.Element {
   const { userUpvotedPostIds, refetchUserUpvotedPostIds } = useFetchUserUpvotes(
     { userId: user?.id }
   );
+
+  const { newPostNotifications, newPostUpvoteNotifications } =
+    useNotifications();
+
+  useEffect(() => {
+    console.log("New Post Notifications: ", newPostNotifications);
+    console.log("New Post Upvote Notifications: ", newPostUpvoteNotifications);
+  }, [newPostNotifications, newPostUpvoteNotifications]);
 
   const [sortOption, setSortOption] = useState(DEFAULT_SORT_OPTION);
 
