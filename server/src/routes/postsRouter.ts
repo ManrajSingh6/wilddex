@@ -4,6 +4,7 @@ import {
   getPostById,
   getPosts,
   getPostsByUserId,
+  getPostUpvotes,
   getPostUpvotesByUserId,
   getUpvoteByPostIdAndUserId,
   updatePostVotes,
@@ -12,11 +13,15 @@ import { getFormattedApiResponse, HTTP_CODES } from "../utils/constants";
 import {
   CreatePostInsert,
   CreatePostRequestBody,
+  NewPostNotification,
+  NewPostUpvoteNotification,
   UpvotePostRequestBody,
 } from "../types";
 import { randomUUID } from "crypto";
 import { supabase } from "../supabase/supabase";
 import { checkAndAwardBadges } from "../utils/bagdes";
+import { io } from "../index";
+import { getUserById } from "../models/authModel";
 
 const SUPABASE_IMAGE_BUCKET = "wilddex-images";
 const BASE_64_IMAGE_REGEX = /^data:(.+);base64,(.*)$/;
@@ -99,6 +104,17 @@ postsRouter.post("/create", async (req: CreatePostRequestBody, res) => {
     res.status(HTTP_CODES.BAD_REQUEST).json(
       getFormattedApiResponse({
         message: "Missing required fields.",
+        code: HTTP_CODES.BAD_REQUEST,
+      })
+    );
+    return;
+  }
+
+  const user = await getUserById(userId);
+  if (!user) {
+    res.status(HTTP_CODES.BAD_REQUEST).json(
+      getFormattedApiResponse({
+        message: "User does not exist.",
         code: HTTP_CODES.BAD_REQUEST,
       })
     );
@@ -206,7 +222,7 @@ postsRouter.post("/create", async (req: CreatePostRequestBody, res) => {
 
   // Save the post to the database
   const dbInsert: CreatePostInsert = {
-    userId,
+    userId: user.id,
     animal: classification,
     notes: notes ?? null,
     conservationNotes: openRouterResponseText || "",
@@ -215,8 +231,8 @@ postsRouter.post("/create", async (req: CreatePostRequestBody, res) => {
     longitude,
   };
 
-  const createSuccess = await createPost(dbInsert);
-  if (!createSuccess) {
+  const createdPost = await createPost(dbInsert);
+  if (!createdPost) {
     res.status(HTTP_CODES.INTERNAL_SERVER_ERROR).json(
       getFormattedApiResponse({
         message: "Error creating post in database",
@@ -226,7 +242,20 @@ postsRouter.post("/create", async (req: CreatePostRequestBody, res) => {
     return;
   }
 
-  await checkAndAwardBadges(userId);
+  await checkAndAwardBadges(user.id);
+
+  const newPostNotification: NewPostNotification = {
+    postId: createdPost.id,
+    postTitle: createdPost.animal,
+    timestamp: new Date(),
+    postedBy: {
+      userId: user.id,
+      name: user.name,
+    },
+  };
+
+  // Broadcast the notification to all connected clients
+  io.emit("new-post", newPostNotification);
 
   res.status(HTTP_CODES.OK).json(
     getFormattedApiResponse({
@@ -271,9 +300,20 @@ postsRouter.post("/vote", async (req: UpvotePostRequestBody, res) => {
     return;
   }
 
+  const likedByUser = await getUserById(req.body.userId);
+  if (!likedByUser) {
+    res.status(HTTP_CODES.INTERNAL_SERVER_ERROR).json(
+      getFormattedApiResponse({
+        message: `Error liking post.`,
+        code: HTTP_CODES.INTERNAL_SERVER_ERROR,
+      })
+    );
+    return;
+  }
+
   const userAlreadyUpvoted = await getUpvoteByPostIdAndUserId(
     postId,
-    req.body.userId
+    likedByUser.id
   );
   if (userAlreadyUpvoted === undefined) {
     res.status(HTTP_CODES.INTERNAL_SERVER_ERROR).json(
@@ -318,6 +358,24 @@ postsRouter.post("/vote", async (req: UpvotePostRequestBody, res) => {
       })
     );
     return;
+  }
+
+  if (req.body.operation === "increment") {
+    const postUpvotes = await getPostUpvotes(postId);
+    if (postUpvotes) {
+      const newUpvoteNotif: NewPostUpvoteNotification = {
+        postId,
+        postTitle: post.animal,
+        upvoteCount: postUpvotes,
+        likedBy: {
+          userId: likedByUser.id,
+          name: likedByUser.name,
+        },
+        timestamp: new Date(),
+      };
+
+      io.to(post.userId.toString()).emit("new-upvote", newUpvoteNotif);
+    }
   }
 
   res.status(HTTP_CODES.OK).json(

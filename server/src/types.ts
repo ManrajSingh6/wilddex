@@ -57,3 +57,24 @@ export interface User {
   email: string;
   name: string; // Password is not included in the User type for security reasons
 }
+
+export interface NewPostUpvoteNotification {
+  postId: number;
+  postTitle: string;
+  upvoteCount: number;
+  likedBy: {
+    userId: number;
+    name: string;
+  };
+  timestamp: Date;
+}
+
+export interface NewPostNotification {
+  postId: number;
+  postTitle: string;
+  postedBy: {
+    userId: number;
+    name: string;
+  };
+  timestamp: Date;
+}

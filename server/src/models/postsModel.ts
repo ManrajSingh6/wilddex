@@ -75,13 +75,32 @@ export async function getPostsByUserId(
   }
 }
 
-export async function createPost(insert: CreatePostInsert): Promise<boolean> {
+export async function createPost(
+  insert: CreatePostInsert
+): Promise<Post | undefined> {
   try {
-    await dbClient.insert(postsTable).values(insert);
-    return true;
+    const postInsert = await dbClient
+      .insert(postsTable)
+      .values(insert)
+      .returning();
+
+    if (postInsert.length < 1) {
+      throw new Error(`PostInsert Return Length: ${postInsert.length}`);
+    }
+
+    const createdPost = postInsert[0];
+
+    const postUpvotes = await getPostUpvotes(createdPost.id);
+    if (postUpvotes === undefined) {
+      throw new Error(
+        `Error fetching post upvotes for Post ID: ${createdPost.id}`
+      );
+    }
+
+    return { ...createdPost, upvotes: postUpvotes };
   } catch (error) {
     console.error(`Error creating post in database: ${JSON.stringify(error)}`);
-    return false;
+    return undefined;
   }
 }
 
