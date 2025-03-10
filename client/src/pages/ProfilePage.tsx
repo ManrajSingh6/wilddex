@@ -3,6 +3,7 @@ import { CustomImage } from "@/components/customImage";
 import DropdownSelect from "@/components/dropdown";
 import { Header } from "@/components/header";
 import { PostCard } from "@/components/postCard";
+import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { useFetchPosts } from "@/hooks/useFetchPosts";
 import { useFetchUserUpvotes } from "@/hooks/useFetchUserUpvotes";
@@ -16,12 +17,22 @@ import { JSX, useState } from "react";
 export function ProfilePage(): JSX.Element {
   const { user } = useAuth();
 
-  const { posts: userPosts } = useFetchPosts({ userId: user?.id });
-  const { userUpvotedPostIds } = useFetchUserUpvotes({ userId: user?.id });
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const { posts: userPosts, refetchPosts } = useFetchPosts({
+    userId: user?.id,
+  });
+  const { userUpvotedPostIds, refetchUserUpvotedPostIds } = useFetchUserUpvotes(
+    { userId: user?.id }
+  );
 
   const [sortOption, setSortOption] = useState(DEFAULT_SORT_OPTION);
 
   const sortedUserPosts = getSortedPosts(userPosts, sortOption.value);
+
+  const filteredPosts = sortedUserPosts.filter((post) =>
+    post.animal.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   if (!user) {
     return <p>Failed to identify user.</p>;
@@ -39,25 +50,40 @@ export function ProfilePage(): JSX.Element {
       </div>
       <div className="flex items-center justify-between">
         <Header header="Your Sightings" />
-        <DropdownSelect
-          selectedOption={sortOption}
-          options={DROPDOWN_SORT_OPTIONS}
-          setSelectedOption={(opt) =>
-            setSortOption(
-              DROPDOWN_SORT_OPTIONS.find((o) => o.value === opt) ||
-                DEFAULT_SORT_OPTION
-            )
-          }
-        />
+        <div className="flex items-center gap-4">
+          <Input
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+            }}
+            placeholder="Search by animal..."
+            className="min-w-72"
+          />
+          <DropdownSelect
+            selectedOption={sortOption}
+            options={DROPDOWN_SORT_OPTIONS}
+            setSelectedOption={(opt) =>
+              setSortOption(
+                DROPDOWN_SORT_OPTIONS.find((o) => o.value === opt) ||
+                  DEFAULT_SORT_OPTION
+              )
+            }
+          />
+        </div>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 mt-4">
-        {sortedUserPosts.length ? (
-          sortedUserPosts.map((post) => {
+        {filteredPosts.length ? (
+          filteredPosts.map((post) => {
             return (
               <PostCard
                 key={post.id}
                 post={post}
                 isUpvotedByUser={userUpvotedPostIds.includes(post.id)}
+                userId={user.id}
+                onVoteSuccess={() => {
+                  refetchPosts();
+                  refetchUserUpvotedPostIds();
+                }}
               />
             );
           })
