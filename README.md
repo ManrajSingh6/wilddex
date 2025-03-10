@@ -11,7 +11,6 @@ WildDex transforms wildlife encounters into memorable experiences while contribu
 - Image-based wildlife identification using machine learning
 - Geolocation tracking for wildlife encounters
 - Community feed for sharing discoveries
-- Achievement system with special badges
 - Secure user authentication
 - Interactive map integration
 
@@ -20,7 +19,7 @@ WildDex transforms wildlife encounters into memorable experiences while contribu
 ### Prerequisites
 
 - Docker Desktop
-- Node.js
+- Node.js (with NVM)
 - npm
 
 ### Setup
@@ -28,7 +27,7 @@ WildDex transforms wildlife encounters into memorable experiences while contribu
 1. Clone the repository
 
 ```bash
-git clone https://github.com/suxxmjz/calgary-hacks-2025
+git clone https://github.com/ManrajSingh6/wilddex.git
 ```
 
 2. Install dependencies in both client and server directories
@@ -47,49 +46,12 @@ docker compose up --build
 ## Technology Stack
 
 - **Frontend**: React
-- **Backend**: Node.js
+- **Backend**: Node.js (Express and SocketIO)
 - **Database**: PostgreSQL
-- **Authentication**: Clerk
 - **Storage**: Supabase
 - **Machine Learning**: TensorFlow
 - **Maps**: Google Maps API
-- **Containerization**: Docker
-
-## Technical Implementation
-
-### Machine Learning Model
-
-Our image classification system uses TensorFlow to identify wildlife species. The model has been fine-tuned to handle various wildlife categories, focusing on accuracy and real-world application.
-
-### Data Storage
-
-- PostgreSQL database for application data
-- Supabase bucket for image storage and retrieval
-- Secure user data management through Clerk
-
-### Location Services
-
-Integrated Google Maps API enables precise geo-tagging of wildlife encounters, contributing to valuable location-based data for conservation research.
-
-## Challenges Overcome
-
-- Developed sophisticated image classification models capable of identifying multiple species
-- Successfully deployed machine learning models in a production environment
-- Integrated complex systems including authentication, storage, and mapping services
-
-## Future Development
-
-- Research portal for authorized users to access wildlife sighting data
-- Enhanced classification capabilities for more species
-- Extended geographical coverage
-- Advanced analytics for conservation researchers
-
-## Team Achievements
-
-- Created an intuitive and user-friendly interface
-- Successfully integrated multiple complex technologies
-- Developed a practical solution for wildlife conservation data collection
-- Implemented secure and scalable architecture
+- **Containerization**: Docker with Docker Compose Orchestration
 
 ---
 
