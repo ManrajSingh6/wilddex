@@ -245,6 +245,7 @@ postsRouter.post("/create", async (req: CreatePostRequestBody, res) => {
   await checkAndAwardBadges(user.id);
 
   const newPostNotification: NewPostNotification = {
+    notificationId: randomUUID(),
     postId: createdPost.id,
     postTitle: createdPost.animal,
     timestamp: new Date(),
@@ -364,6 +365,7 @@ postsRouter.post("/vote", async (req: UpvotePostRequestBody, res) => {
     const postUpvotes = await getPostUpvotes(postId);
     if (postUpvotes) {
       const newUpvoteNotif: NewPostUpvoteNotification = {
+        notificationId: randomUUID(),
         postId,
         postTitle: post.animal,
         upvoteCount: postUpvotes,
