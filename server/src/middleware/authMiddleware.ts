@@ -58,12 +58,12 @@ export function authenticateSocketToken(
 ): void {
   const token: string | undefined = socket.handshake.auth.token;
   if (!token) {
-    return next(new Error("Unauthorized"));
+    return next(new Error("Unauthorized Socket User"));
   }
 
   const user = verifyToken(token);
   if (!user) {
-    return next(new Error("Unauthorized"));
+    return next(new Error("Unauthorized Socket User - Error verifying user"));
   }
 
   socket.user = user;
