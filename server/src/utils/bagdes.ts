@@ -1,15 +1,10 @@
 import { assignBadgeToUser, doesUserHaveBadge } from "../models/badgeModel";
 import { getPostsByUserId, getPostUpvotesByUserId } from "../models/postsModel";
-import { Badge, User } from "../types";
+import { Badge } from "../types";
 
 export interface BadgeRule {
   badgeId: number;
-  qualifies: (userId: string) => Promise<boolean>;
-}
-
-interface Operation {
-  postsCreated: number;
-  totalUpvotes: number;
+  qualifies: (userId: number) => Promise<boolean>;
 }
 
 export const POSSIBLE_BADGES: readonly Omit<Badge, "userId" | "dateEarned">[] =
@@ -40,7 +35,7 @@ export const POSSIBLE_BADGES: readonly Omit<Badge, "userId" | "dateEarned">[] =
 
 const firstPostRule: BadgeRule = {
   badgeId: 1,
-  qualifies: async (userId: string) => {
+  qualifies: async (userId: number) => {
     const postsByUser = await getPostsByUserId(userId);
 
     if (postsByUser === undefined) {
@@ -53,7 +48,7 @@ const firstPostRule: BadgeRule = {
 
 const firstUpvoteRule: BadgeRule = {
   badgeId: 2,
-  qualifies: async (userId: string) => {
+  qualifies: async (userId: number) => {
     const upvotesByUser = await getPostUpvotesByUserId(userId);
     if (!upvotesByUser) {
       return false;
@@ -65,7 +60,7 @@ const firstUpvoteRule: BadgeRule = {
 
 const fivePostsRule: BadgeRule = {
   badgeId: 1,
-  qualifies: async (userId: string) => {
+  qualifies: async (userId: number) => {
     const postsByUser = await getPostsByUserId(userId);
 
     if (postsByUser === undefined) {
@@ -82,7 +77,7 @@ const BADGE_RULES: readonly BadgeRule[] = [
   fivePostsRule,
 ];
 
-async function awardBadge(userId: string, badgeId: number): Promise<boolean> {
+async function awardBadge(userId: number, badgeId: number): Promise<boolean> {
   const badge = POSSIBLE_BADGES.find((b) => b.id === badgeId);
 
   if (!badge) {
@@ -100,7 +95,7 @@ async function awardBadge(userId: string, badgeId: number): Promise<boolean> {
   return assignSuccess;
 }
 
-export async function checkAndAwardBadges(userId: string): Promise<void> {
+export async function checkAndAwardBadges(userId: number): Promise<void> {
   for (const rule of BADGE_RULES) {
     const userQualifiesRule = await rule.qualifies(userId);
     const userHasBadge = await doesUserHaveBadge(rule.badgeId, userId);

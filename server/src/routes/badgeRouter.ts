@@ -16,7 +16,7 @@ badgeRouter.get("/:userId", async (req, res) => {
     return;
   }
 
-  const sanitizedUserId = userId as string;
+  const sanitizedUserId = userId as unknown as number;
   const badges = await getBadgesByUserId(sanitizedUserId);
   if (!badges) {
     res.status(HTTP_CODES.INTERNAL_SERVER_ERROR).json(

@@ -4,7 +4,7 @@ import { AssignBadgeInsert, Badge } from "../types";
 import { badgesTable } from "../db/schema";
 
 export async function getBadgesByUserId(
-  userId: string
+  userId: number
 ): Promise<readonly Badge[] | undefined> {
   try {
     return await dbClient.query.badgesTable.findMany({
@@ -32,7 +32,7 @@ export async function assignBadgeToUser(
 
 export async function doesUserHaveBadge(
   bagdeId: number,
-  userId: string
+  userId: number
 ): Promise<boolean | undefined> {
   try {
     const badge = await dbClient.query.badgesTable.findFirst({

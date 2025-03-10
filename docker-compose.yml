@@ -40,18 +40,18 @@ services:
     networks:
       - wilddex-network
 
-  virtual-pokeball:
+  client:
     build:
-      context: ./virtual-pokeball
+      context: ./client
       dockerfile: Dockerfile
     image: wilddex-client
     restart: always
     ports:
       - "5173:5173"
     env_file:
-      - "./virtual-pokeball/.env"
+      - "./client/.env"
     volumes:
-      - ./virtual-pokeball:/app
+      - ./client:/app
       - /app/node_modules
     depends_on:
       - api

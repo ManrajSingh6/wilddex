@@ -6,13 +6,14 @@ import {
   primaryKey,
   text,
   timestamp,
-  unique,
   varchar,
 } from "drizzle-orm/pg-core";
 
 export const usersTable = pgTable("users", {
-  id: varchar().primaryKey().notNull().unique(),
-  username: varchar().notNull(),
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  name: varchar().notNull(),
+  email: varchar().notNull().unique(),
+  password: varchar().notNull(),
 });
 
 export const userRelations = relations(usersTable, ({ many }) => ({
@@ -22,7 +23,7 @@ export const userRelations = relations(usersTable, ({ many }) => ({
 
 export const postsTable = pgTable("posts", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  userId: varchar("user_id")
+  userId: integer("user_id")
     .notNull()
     .references(() => usersTable.id, {
       onDelete: "cascade",
@@ -46,7 +47,7 @@ export const badgesTable = pgTable(
   "badges",
   {
     id: integer().notNull(),
-    userId: varchar("user_id")
+    userId: integer("user_id")
       .notNull()
       .references(() => usersTable.id, {
         onDelete: "cascade",
@@ -78,7 +79,7 @@ export const upvotesTable = pgTable("upvotes", {
       onDelete: "cascade",
       onUpdate: "no action",
     }),
-  userId: varchar("user_id")
+  userId: integer("user_id")
     .notNull()
     .references(() => usersTable.id, {
       onDelete: "cascade",
