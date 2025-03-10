@@ -37,12 +37,10 @@ export const NotificationsProvider = ({
 
   useEffect(() => {
     socket.on("new-upvote", (newUpvoteNotif: NewPostUpvoteNotification) => {
-      console.log("New Upvote Notification: ", newUpvoteNotif);
       setNewPostUpvoteNotifications((prev) => [...prev, newUpvoteNotif]);
     });
 
     socket.on("new-post", (newPostNotif: NewPostNotification) => {
-      console.log("New Post Notification: ", newPostNotif);
       setNewPostNotifications((prev) => [...prev, newPostNotif]);
     });
 

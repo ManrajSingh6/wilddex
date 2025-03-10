@@ -11,6 +11,7 @@ import { Input } from "./ui/input";
 import { IoIosAddCircle } from "react-icons/io";
 import { useAuth } from "@/hooks/useAuth";
 import { useAddSighting } from "@/hooks/useAddSighting";
+import { GOOGLE_MAPS_API_BASE_URL } from "@/App";
 
 const MAX_NOTES_LENGTH_CHARS = 250;
 
@@ -144,59 +145,60 @@ export function AddSightingModal({
     }
   }
 
+  async function fetchUserLocation(): Promise<
+    { lat: number; lng: number } | undefined
+  > {
+    const googleMapsResponse = await fetch(GOOGLE_MAPS_API_BASE_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!googleMapsResponse.ok) {
+      toast({
+        title: "Error fetching user location",
+        description: "Please try again later.",
+      });
+      return;
+    }
+
+    const locationJSON = await googleMapsResponse.json();
+    if (!locationJSON.location) {
+      return undefined;
+    }
+
+    return {
+      lat: locationJSON.location.latitude,
+      lng: locationJSON.location.longitude,
+    };
+  }
+
   useEffect(() => {
     if (isOpen && navigator.geolocation) {
       initializeCamera("user");
 
-      let retryTimeout: ReturnType<typeof setTimeout>;
-
-      // Optional: set a limit to avoid infinite retries.
-      let retries = 0;
-      const maxRetries = 5;
-
-      const attemptGetPosition = () => {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            // Success: update your form data with the user's location.
-            setFormData((prev) => ({
-              ...prev,
-              location: {
-                lat: pos.coords.latitude,
-                lng: pos.coords.longitude,
-              },
-            }));
-          },
-          (error) => {
-            // Check if the error indicates that the location is temporarily unavailable.
-            // POSITION_UNAVAILABLE (code 2) is commonly used.
-            if (
-              error.code === error.POSITION_UNAVAILABLE &&
-              retries < maxRetries
-            ) {
-              console.warn("Location unavailable, retrying...");
-              retries++;
-              retryTimeout = setTimeout(attemptGetPosition, 3000); // Retry after 3 seconds.
-            } else {
-              console.error("Error getting location:", error.message);
-              // Optionally handle other errors (like permission denied or timeout).
-            }
-          },
-          {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0,
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setFormData({
+            ...formData,
+            location: {
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude,
+            },
+          });
+        },
+        async (error) => {
+          console.error(error);
+          const location = await fetchUserLocation();
+          if (location) {
+            setFormData({
+              ...formData,
+              location,
+            });
           }
-        );
-      };
-
-      attemptGetPosition();
-
-      return () => {
-        // Cleanup: clear any pending timeout, stop camera, and reset form data.
-        clearTimeout(retryTimeout);
-        stopCamera();
-        setFormData(getDefaultFormData());
-      };
+        }
+      );
     } else {
       stopCamera();
       setFormData(getDefaultFormData());

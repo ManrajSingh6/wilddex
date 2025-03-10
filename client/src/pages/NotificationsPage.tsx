@@ -90,12 +90,6 @@ export function NotificationsPage(): JSX.Element {
   });
 
   useEffect(() => {
-    console.log("New Post Notifications IN HERERE: ", newPostNotifications);
-    console.log(
-      "New Post Upvote Notifications IN HERERE: ",
-      newPostUpvoteNotifications
-    );
-
     setLocalNewPostNotifications(newPostNotifications);
     setLocalNewPostUpvoteNotifications(newPostUpvoteNotifications);
   }, [newPostNotifications, newPostUpvoteNotifications]);
