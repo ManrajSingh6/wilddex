@@ -1,7 +1,7 @@
 name: WildDex
 
 services:
-  db:
+  db-primary:
     image: postgres
     restart: always
     ports:
@@ -9,9 +9,29 @@ services:
     env_file:
       - "./server/.env"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata-primary:/var/lib/postgresql/data
     networks:
       - wilddex-network
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: wilddex
+      POSTGRES_DB: wilddex-primary-db
+
+  db-replica:
+    image: postgres
+    restart: always
+    ports:
+      - "5433:5432"
+    env_file:
+      - "./server/.env"
+    volumes:
+      - pgdata-replica:/var/lib/postgresql/data
+    networks:
+      - wilddex-network
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: wilddex
+      POSTGRES_DB: wilddex-replica-db
 
   api:
     build:
@@ -28,7 +48,7 @@ services:
       - ./server:/app
       - /app/node_modules
     depends_on:
-      - db
+      - db-primary
 
   prediction-api:
     build:
@@ -59,7 +79,8 @@ services:
       - wilddex-network
 
 volumes:
-  pgdata:
+  pgdata-primary:
+  pgdata-replica:
 
 networks:
   wilddex-network:
