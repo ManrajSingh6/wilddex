@@ -6,12 +6,9 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   server: {
-    host: true,
-    strictPort: true,
-    watch: {
-      usePolling: true,
-    },
+    port: 3001,
   },
+  base: "/",
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

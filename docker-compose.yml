@@ -1,7 +1,7 @@
 name: WildDex
 
 services:
-  db:
+  db-primary:
     image: postgres
     restart: always
     ports:
@@ -9,11 +9,31 @@ services:
     env_file:
       - "./server/.env"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata-primary:/var/lib/postgresql/data
     networks:
       - wilddex-network
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: wilddex
+      POSTGRES_DB: wilddex-primary-db
 
-  api:
+  db-replica:
+    image: postgres
+    restart: always
+    ports:
+      - "5433:5432"
+    env_file:
+      - "./server/.env"
+    volumes:
+      - pgdata-replica:/var/lib/postgresql/data
+    networks:
+      - wilddex-network
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: wilddex
+      POSTGRES_DB: wilddex-replica-db
+
+  api-1:
     build:
       context: ./server
       dockerfile: Dockerfile
@@ -28,7 +48,47 @@ services:
       - ./server:/app
       - /app/node_modules
     depends_on:
-      - db
+      - db-primary
+    environment:
+      - PORT=4000
+    
+  api-2:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    image: wilddex-api
+    ports:
+      - "4001:4001"
+    env_file:
+      - "./server/.env"
+    networks:
+      - wilddex-network
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    depends_on:
+      - db-primary
+    environment:
+      - PORT=4001
+
+  api-3:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    image: wilddex-api
+    ports:
+      - "4002:4002"
+    env_file:
+      - "./server/.env"
+    networks:
+      - wilddex-network
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    depends_on:
+      - db-primary
+    environment:
+      - PORT=4002
 
   prediction-api:
     build:
@@ -47,19 +107,18 @@ services:
     image: wilddex-client
     restart: always
     ports:
-      - "5173:5173"
+      - "80:80"
     env_file:
       - "./client/.env"
     volumes:
       - ./client:/app
       - /app/node_modules
-    depends_on:
-      - api
     networks:
       - wilddex-network
 
 volumes:
-  pgdata:
+  pgdata-primary:
+  pgdata-replica:
 
 networks:
   wilddex-network:
