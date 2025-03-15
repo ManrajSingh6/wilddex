@@ -20,6 +20,8 @@ export function authenticateToken(
   res: Response,
   next: NextFunction
 ): void {
+  console.log("Recieved A Request with token: ", req.headers.authorization);
+
   if (PUBLIC_PATHS.includes(req.path)) {
     return next();
   }
