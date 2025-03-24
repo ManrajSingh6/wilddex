@@ -128,6 +128,7 @@ const job = new CronJob(
 );
 (async () => {
   try {
+    await new Promise(resolve => setTimeout(resolve, 5000)); // Wait for 5 seconds
     console.log("🔄 Running manageDatabaseCluster on cold start...");
     await manageDatabaseCluster();
   } catch (error) {
