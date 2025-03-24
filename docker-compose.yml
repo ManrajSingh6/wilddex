@@ -33,11 +33,24 @@ services:
       POSTGRES_PASSWORD: wilddex
       POSTGRES_DB: wilddex-replica-db
 
+  redis-cache:
+    image: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    env_file:
+      - "./server/.env"
+    volumes:
+      - redis-cache:/data
+    networks:
+      - wilddex-network
+
   api-1:
     build:
       context: ./server
       dockerfile: Dockerfile
     image: wilddex-api
+    restart: always
     ports:
       - "4000:4000"
     env_file:
@@ -49,14 +62,20 @@ services:
       - /app/node_modules
     depends_on:
       - db-primary
+      - redis-cache
     environment:
       - PORT=4000
+    deploy:
+      restart_policy:
+        condition: always
+        delay: 5s          # Optional: Delay between restart attempts
     
   api-2:
     build:
       context: ./server
       dockerfile: Dockerfile
     image: wilddex-api
+    restart: always
     ports:
       - "4001:4001"
     env_file:
@@ -67,7 +86,8 @@ services:
       - ./server:/app
       - /app/node_modules
     depends_on:
-      - db-primary
+          - db-primary
+          - redis-cache
     environment:
       - PORT=4001
 
@@ -76,6 +96,7 @@ services:
       context: ./server
       dockerfile: Dockerfile
     image: wilddex-api
+    restart: always
     ports:
       - "4002:4002"
     env_file:
@@ -87,6 +108,7 @@ services:
       - /app/node_modules
     depends_on:
       - db-primary
+      - redis-cache
     environment:
       - PORT=4002
 
@@ -95,6 +117,7 @@ services:
       context: ./model
       dockerfile: Dockerfile
     image: wilddex-prediction-api
+    restart: always
     ports:
       - "8080:8080"
     networks:
@@ -119,6 +142,7 @@ services:
 volumes:
   pgdata-primary:
   pgdata-replica:
+  redis-cache:
 
 networks:
   wilddex-network:
