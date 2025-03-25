@@ -1,9 +1,7 @@
 import { createClient } from "redis";
-import Redlock from "redlock";
 import { databaseHealth } from "./db-health-sync";
-import { WebSocketServer, WebSocket } from "ws";
+import { WebSocket } from "ws";
 import dotenv from "dotenv";
-const { promisify } = require("util");
 
 dotenv.config();
 
@@ -26,7 +24,6 @@ export function getWebSocketUrl(port: number): string | undefined {
 }
 
 const REDIS_PORT = process.env.REDIS_PORT || 6379;
-const REDIS_PASSWORD = process.env.REDIS_PASSWORD || "wilddex";
 const REDIS_HOST = "redis-cache";
 
 console.log(`Connecting to Redis: redis://${REDIS_HOST}:${REDIS_PORT}`);
