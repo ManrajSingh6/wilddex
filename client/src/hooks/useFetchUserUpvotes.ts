@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "./use-toast";
 import { ApiResponse } from "@/types/apiTypes";
-import { BASE_API_URL } from "@/App";
 import { useAuth } from "./useAuth";
+import { fetchWithProxy } from "@/utils/proxyFetch";
 
 interface UseFetchUserUpvotesReturn {
   readonly userUpvotedPostIds: readonly number[];
@@ -26,7 +26,8 @@ export function useFetchUserUpvotes({
         return [];
       }
 
-      const response = await fetch(`${BASE_API_URL}/posts/votes/${userId}`, {
+      const response = await fetchWithProxy({
+        endpoint: `posts/votes/${userId}`,
         method: "GET",
         headers: {
           "Content-Type": "application/json",
