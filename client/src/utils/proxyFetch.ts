@@ -46,6 +46,6 @@ export async function fetchWithProxy(
     }
   } catch (error) {
     console.error(`Error in backup proxy fetch: ${error}`);
-    throw new Error("Both primary and backup proixies are down.");
+    throw new Error("Both primary and backup proxies are down.");
   }
 }
