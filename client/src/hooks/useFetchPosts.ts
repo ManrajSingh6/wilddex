@@ -2,8 +2,8 @@ import { Post } from "@/types/postTypes";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "./use-toast";
 import { ApiResponse } from "@/types/apiTypes";
-import { BASE_API_URL } from "@/App";
 import { useAuth } from "./useAuth";
+import { fetchWithProxy } from "@/utils/proxyFetch";
 
 interface UseFetchPostsReturn {
   readonly posts: readonly Post[];
@@ -25,7 +25,8 @@ export function useFetchPosts({
   const { isPending, isError, data, refetch } = useQuery({
     queryKey: ["posts", userId],
     queryFn: async () => {
-      const response = await fetch(`${BASE_API_URL}/${endpoint}`, {
+      const response = await fetchWithProxy({
+        endpoint,
         method: "GET",
         headers: {
           "Content-Type": "application/json",

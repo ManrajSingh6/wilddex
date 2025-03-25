@@ -21,10 +21,6 @@ import { CommunityPage } from "./pages/CommunityPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
 import { NotificationsProvider } from "./context/notificationsContext";
 
-export const BASE_API_URL = `${
-  import.meta.env.VITE_BACKEND_API_URL
-}/api` as const;
-
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY;
 
 export const GOOGLE_MAPS_API_BASE_URL = `https://www.googleapis.com/geolocation/v1/geolocate?key=${GOOGLE_MAPS_API_KEY}`;

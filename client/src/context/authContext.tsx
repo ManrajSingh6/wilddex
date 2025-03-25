@@ -3,11 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { User } from "@/types/userTypes";
 import { useMutation } from "@tanstack/react-query";
-import { BASE_API_URL } from "@/App";
 import { LoginFormData } from "@/pages/LoginPage";
 import { ApiResponse } from "@/types/apiTypes";
 import { RegisterFormData } from "@/pages/RegisterPage";
 import { HOME_ROUTE, LOGIN_ROUTE } from "@/utils/routes";
+import { fetchWithProxy } from "@/utils/proxyFetch";
 
 const REFRESH_INTERVAL_MS = 60000 * 30; // 30 minutes
 
@@ -38,7 +38,8 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
 
   const loginMutation = useMutation({
     mutationFn: async ({ email, password }: LoginFormData) => {
-      const loginResponse = await fetch(`${BASE_API_URL}/auth/login`, {
+      const loginResponse = await fetchWithProxy({
+        endpoint: "auth/login",
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -76,7 +77,8 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
 
   const registerMutation = useMutation({
     mutationFn: async ({ name, email, password }: RegisterFormData) => {
-      const registerResponse = await fetch(`${BASE_API_URL}/auth/register`, {
+      const registerResponse = await fetchWithProxy({
+        endpoint: "auth/register",
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -130,7 +132,8 @@ export function AuthProvider({ children }: AuthProviderProps): JSX.Element {
       return;
     }
 
-    const refreshResponse = await fetch(`${BASE_API_URL}/auth/refresh`, {
+    const refreshResponse = await fetchWithProxy({
+      endpoint: "auth/refresh",
       method: "POST",
       headers: {
         "Content-Type": "application/json",

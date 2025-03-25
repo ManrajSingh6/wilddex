@@ -1,8 +1,8 @@
 import { AddSightingFormData } from "@/components/addSightingModal";
 import { useToast } from "./use-toast";
 import { useMutation } from "@tanstack/react-query";
-import { BASE_API_URL } from "@/App";
 import { useAuth } from "./useAuth";
+import { fetchWithProxy } from "@/utils/proxyFetch";
 
 type NewSightingInput = AddSightingFormData & { userId: number };
 
@@ -22,7 +22,8 @@ export function useAddSighting(): UseAddSightingReturn {
         throw new Error("Missing location or image data.");
       }
 
-      const response = await fetch(`${BASE_API_URL}/posts/create`, {
+      const response = await fetchWithProxy({
+        endpoint: "posts/create",
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "./use-toast";
-import { BASE_API_URL } from "@/App";
 import { useAuth } from "./useAuth";
+import { fetchWithProxy } from "@/utils/proxyFetch";
 
 interface PostVoteRequest {
   postId: number;
@@ -26,7 +26,8 @@ export function useVotePost({
 
   const votePostMutation = useMutation({
     mutationFn: async ({ postId, operation }: PostVoteRequest) => {
-      const response = await fetch(`${BASE_API_URL}/posts/vote`, {
+      const response = await fetchWithProxy({
+        endpoint: "posts/vote",
         method: "POST",
         body: JSON.stringify({ id: postId, operation, userId }),
         headers: {
