@@ -65,7 +65,7 @@ services:
       - redis-cache
     environment:
       - PORT=4000
-      
+
   api-2:
     build:
       context: ./server
@@ -82,8 +82,8 @@ services:
       - ./server:/app
       - /app/node_modules
     depends_on:
-          - db-primary
-          - redis-cache
+      - db-primary
+      - redis-cache
     environment:
       - PORT=4001
 
@@ -126,7 +126,7 @@ services:
     image: wilddex-client
     restart: always
     ports:
-      - "80:80"
+      - "5173:80"
     env_file:
       - "./client/.env"
     volumes:
@@ -134,6 +134,37 @@ services:
       - /app/node_modules
     networks:
       - wilddex-network
+    depends_on:
+      - main_proxy
+      - backup_proxy
+
+  main_proxy:
+    image: nginx:stable-alpine
+    restart: always
+    volumes:
+      - ./client/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - wilddex-network
+    depends_on:
+      - api-1
+      - api-2
+      - api-3
+    ports:
+      - "3000:80"
+
+  backup_proxy:
+    image: nginx:stable-alpine
+    restart: always
+    volumes:
+      - ./client/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - wilddex-network
+    depends_on:
+      - api-1
+      - api-2
+      - api-3
+    ports:
+      - "3001:80"
 
 volumes:
   pgdata-primary:

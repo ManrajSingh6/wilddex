@@ -5,7 +5,7 @@ import { Socket } from "socket.io";
 import { User } from "../types";
 
 const PUBLIC_PATHS = [
-  "/health",
+  "/api/health",
   "/api/auth/login",
   "/api/auth/register",
   "/api/auth/refresh",
