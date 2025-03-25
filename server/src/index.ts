@@ -91,7 +91,6 @@ io.on("connection", (socket: AuthenticatedSocket) => {
 wsServer.on("connection", (ws: WebSocket) => {
   ws.on("message", async (message: string) => {
     const data = JSON.parse(message);
-    console.log(data);
     if (data.type === "election") {
       electionMsg(data.port, ws);
     }

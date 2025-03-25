@@ -188,8 +188,7 @@ export function AddSightingModal({
             },
           });
         },
-        async (error) => {
-          console.error(error);
+        async () => {
           const location = await fetchUserLocation();
           if (location) {
             setFormData({
