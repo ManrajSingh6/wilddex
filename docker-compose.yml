@@ -21,7 +21,7 @@ services:
     image: postgres
     restart: always
     ports:
-      - "5433:5432"
+      - "5433:5433"
     env_file:
       - "./server/.env"
     volumes:
@@ -37,7 +37,7 @@ services:
     image: postgres
     restart: always
     ports:
-      - "5434:5432"
+      - "5434:5434"
     env_file:
       - "./server/.env"
     volumes:
