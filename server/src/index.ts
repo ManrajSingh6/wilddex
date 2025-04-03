@@ -27,6 +27,9 @@ export const dbClient = createDbClient(process.env.DATABASE_URL ?? "");
 export const replicaDbClient = createDbClient(
   process.env.REPICA_DATABASE_URL ?? ""
 );
+export const replica2DbClient = createDbClient(
+  process.env.REPICA2_DATABASE_URL ?? ""
+);
 
 app.use(express.json({ limit: "50mb" }));
 

@@ -11,6 +11,7 @@ const PEER_PORTS: number[] = [4000, 4001, 4002].filter((p) => p !== PORT);
 
 export let isPrimaryDBAlive: Boolean = true;
 export let isReplicaDBAlive: Boolean = true;
+export let isReplica2DBAlive: Boolean = true;
 
 const PEER_PORT_HOST_MAPPING = new Map<number, string>([
   [4000, "api-1"],
@@ -230,11 +231,13 @@ export async function manageDatabaseCluster() {
   if (isLeader) {
     const dbPrimaryHealth = await databaseHealth("primary");
     const dbReplicaHealth = await databaseHealth("replica");
+    const dbReplica2Health = await databaseHealth("replica2");
 
     if (dbPrimaryHealth != undefined) isPrimaryDBAlive = dbPrimaryHealth;
     if (dbReplicaHealth != undefined) isReplicaDBAlive = dbReplicaHealth;
+    if (dbReplica2Health != undefined) isReplica2DBAlive = dbReplica2Health;
 
-    if (isPrimaryDBAlive && isReplicaDBAlive) {
+    if (isPrimaryDBAlive && isReplicaDBAlive && isReplica2DBAlive) {
       try {
         console.log("Attempting to acquire DB sync lock...");
 
