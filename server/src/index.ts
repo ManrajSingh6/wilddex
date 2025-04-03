@@ -112,7 +112,7 @@ const job = new CronJob(
   "* * * * *", // cronTime every minute
   async () => {
     // Wrap manageDatabaseCluster in an async function
-    await manageDatabaseCluster();
+    await manageDatabaseCluster(false);
   }, // onTick
   null, // onComplete
   true, // start
@@ -122,7 +122,7 @@ const job = new CronJob(
   try {
     await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait for 5 seconds
     console.log("🔄 Running manageDatabaseCluster on cold start...");
-    await manageDatabaseCluster();
+    await manageDatabaseCluster(true);
   } catch (error) {
     console.error("❌ Error running manageDatabaseCluster on startup:", error);
   }

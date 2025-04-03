@@ -26,6 +26,11 @@ services:
       - "./server/.env"
     volumes:
       - pgdata-replica:/var/lib/postgresql/data
+      - ./server/postgresql-5433.conf:/etc/postgresql/postgresql.conf
+    command:
+      - "postgres"
+      - "-c"
+      - "config_file=/etc/postgresql/postgresql.conf"
     networks:
       - wilddex-network
     environment:
@@ -42,6 +47,11 @@ services:
       - "./server/.env"
     volumes:
       - pgdata-replica:/var/lib/postgresql/data
+      - ./server/postgresql-5434.conf:/etc/postgresql/postgresql.conf
+    command:
+      - "postgres"
+      - "-c"
+      - "config_file=/etc/postgresql/postgresql.conf"
     networks:
       - wilddex-network
     environment:

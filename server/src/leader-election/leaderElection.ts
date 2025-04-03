@@ -2,6 +2,7 @@ import { createClient } from "redis";
 import { databaseHealth } from "./db-health-sync";
 import { WebSocket } from "ws";
 import dotenv from "dotenv";
+import { syncAllPrimaryData } from "../db/synchronisation";
 
 dotenv.config();
 
@@ -225,7 +226,7 @@ export async function leader_election() {
   } else checkLeader(null);
 }
 
-export async function manageDatabaseCluster() {
+export async function manageDatabaseCluster(sync_all: boolean) {
   const LE = await leader_election();
 
   if (isLeader) {
@@ -255,6 +256,12 @@ export async function manageDatabaseCluster() {
 
         // Perform database sync
         console.log("Trying to sync databases");
+        if (sync_all) {
+          console.log(`Syncing All the DATA to all replicas`);
+          syncAllPrimaryData();
+        } else {
+          console.log(`Syncing New Data`);
+        }
 
         console.log("Database sync completed. Releasing lock...");
 
