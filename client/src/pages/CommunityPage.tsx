@@ -1,5 +1,4 @@
 import { JSX, useState } from "react";
-import "../styles/community-page.css";
 import { useFetchPosts } from "@/hooks/useFetchPosts";
 import { PostCard } from "@/components/postCard";
 import { Header } from "@/components/header";
@@ -67,7 +66,7 @@ export function CommunityPage(): JSX.Element {
             setSelectedOption={(opt) =>
               setSortOption(
                 DROPDOWN_SORT_OPTIONS.find((o) => o.value === opt) ||
-                  DEFAULT_SORT_OPTION
+                DEFAULT_SORT_OPTION
               )
             }
           />
