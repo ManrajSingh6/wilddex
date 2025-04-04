@@ -2,7 +2,8 @@ import { createClient } from "redis";
 import { databaseHealth } from "./db-health-sync";
 import { WebSocket } from "ws";
 import dotenv from "dotenv";
-import { syncAllPrimaryData } from "../db/synchronisation";
+import { syncAllData } from "../db/synchronisation";
+import { activeDBs, dbClient, downDBs, replica2DbClient, replicaDbClient } from "..";
 
 dotenv.config();
 
@@ -226,10 +227,14 @@ export async function leader_election() {
   } else checkLeader(null);
 }
 
-export async function manageDatabaseCluster(sync_all: boolean) {
+export async function manageDatabaseCluster() {
   const LE = await leader_election();
 
   if (isLeader) {
+    console.log("Leader Checking the DBs health\nBefore Health Check the DBs looklike");
+    console.log("Down DBs: ", downDBs);
+    console.log("Active DBs: ", activeDBs);
+
     const dbPrimaryHealth = await databaseHealth("primary");
     const dbReplicaHealth = await databaseHealth("replica");
     const dbReplica2Health = await databaseHealth("replica2");
@@ -238,38 +243,81 @@ export async function manageDatabaseCluster(sync_all: boolean) {
     if (dbReplicaHealth != undefined) isReplicaDBAlive = dbReplicaHealth;
     if (dbReplica2Health != undefined) isReplica2DBAlive = dbReplica2Health;
 
-    if (isPrimaryDBAlive && isReplicaDBAlive && isReplica2DBAlive) {
-      try {
-        console.log("Attempting to acquire DB sync lock...");
+    if (isPrimaryDBAlive) {
+      console.log("DB1 is alive");
+      //see if it came back alive after being down
+      if (downDBs.includes(dbClient)) {
+        console.log("DB1 just came back alive again\nsyncing all data...");
 
-        const lockKey = "db-sync-lock";
-        const ttl = 5000; // 5 seconds
-
-        const lockAcquired = await acquireLock(lockKey, ttl);
-
-        if (!lockAcquired) {
-          console.log("Lock not acquired. Another process is already syncing.");
-          return;
+        syncAllData(activeDBs[0], dbClient);
+        activeDBs.push(dbClient);
+        const index = downDBs.indexOf(dbClient);
+        if (index !== -1) {
+          downDBs.splice(index, 1);
         }
-
-        console.log("Lock acquired! Performing database sync...");
-
-        // Perform database sync
-        console.log("Trying to sync databases");
-        if (sync_all) {
-          console.log(`Syncing All the DATA to all replicas`);
-          syncAllPrimaryData();
-        } else {
-          console.log(`Syncing New Data`);
+      }
+    } else {
+      console.log("DB1 is down");
+      if (!downDBs.includes(dbClient)) {
+        console.log("Removing DB1 form active DB group");
+        downDBs.push(dbClient);
+        const index = activeDBs.indexOf(dbClient);
+        if (index !== -1) {
+          activeDBs.splice(index, 1);
         }
-
-        console.log("Database sync completed. Releasing lock...");
-
-        // Release lock
-        await releaseLock(lockKey);
-      } catch (error) {
-        console.error("Failed to acquire lock or sync databases:", error);
       }
     }
+    if (isReplicaDBAlive) {
+      console.log("DB2 is alive");
+      //see if it came back alive after being down
+      if (downDBs.includes(replicaDbClient)) {
+        console.log("DB2 just came back alive again\nsyncing all data...");
+
+        syncAllData(activeDBs[0], replicaDbClient);
+        activeDBs.push(replicaDbClient);
+        const index = downDBs.indexOf(replicaDbClient);
+        if (index !== -1) {
+          downDBs.splice(index, 1);
+        }
+      }
+    } else {
+      console.log("DB2 is down");
+      if (!downDBs.includes(replicaDbClient)) {
+        console.log("Removing DB1 form active DB group");
+        downDBs.push(replicaDbClient);
+        const index = activeDBs.indexOf(replicaDbClient);
+        if (index !== -1) {
+          activeDBs.splice(index, 1);
+        }
+      }
+    }
+    if (isReplica2DBAlive) {
+      console.log("DB3 is alive");
+      //see if it came back alive after being down
+      if (downDBs.includes(replica2DbClient)) {
+        console.log("DB3 just came back alive again\nsyncing all data...");
+
+        syncAllData(activeDBs[0], replica2DbClient);
+        activeDBs.push(replica2DbClient);
+        const index = downDBs.indexOf(replica2DbClient);
+        if (index !== -1) {
+          downDBs.splice(index, 1);
+        }
+      }
+    } else {
+      console.log("DB3 is down");
+      if (!downDBs.includes(replica2DbClient)) {
+        console.log("Removing DB3 form active DB group");
+        downDBs.push(replica2DbClient);
+        const index = activeDBs.indexOf(replica2DbClient);
+        if (index !== -1) {
+          activeDBs.splice(index, 1);
+        }
+      }
+    }
+
+    console.log("The status of DBs after leader checkup:");
+    console.log("Down DBs: ", downDBs);
+    console.log("Active DBs: ", activeDBs);
   }
 }

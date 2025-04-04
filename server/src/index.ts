@@ -31,6 +31,11 @@ export const replica2DbClient = createDbClient(
   process.env.REPLICA2_DATABASE_URL ?? ""
 );
 
+type dbClientType = typeof dbClient;
+
+export const downDBs: dbClientType[] = [];
+export const activeDBs: dbClientType[] = [dbClient, replica2DbClient, replicaDbClient];
+
 app.use(express.json({ limit: "50mb" }));
 
 app.use(authenticateToken);
@@ -112,7 +117,7 @@ const job = new CronJob(
   "* * * * *", // cronTime every minute
   async () => {
     // Wrap manageDatabaseCluster in an async function
-    await manageDatabaseCluster(false);
+    await manageDatabaseCluster();
   }, // onTick
   null, // onComplete
   true, // start
@@ -122,7 +127,7 @@ const job = new CronJob(
   try {
     await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait for 5 seconds
     console.log("🔄 Running manageDatabaseCluster on cold start...");
-    await manageDatabaseCluster(true);
+    await manageDatabaseCluster();
   } catch (error) {
     console.error("❌ Error running manageDatabaseCluster on startup:", error);
   }
