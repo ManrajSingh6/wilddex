@@ -9,6 +9,9 @@
     "dev": "nodemon src/index.ts",
     "db:migrate:generate": "npx drizzle-kit generate",
     "db:migrate:apply": "npx drizzle-kit migrate",
+    "db:migrate:replica1": "DEV_DATABASE_URL=$DEV_DATABASE_URL2 npx drizzle-kit migrate",
+    "db:migrate:replica2": "DEV_DATABASE_URL=$DEV_DATABASE_URL3 npx drizzle-kit migrate",
+    "db:migrate:all": "npm run db:migrate:apply && npm run db:migrate:replica1 && npm run db:migrate:replica2" ,
     "db:studio": "npx drizzle-kit studio",
     "db:seed": "npx tsx src/db/seed.ts"
   },
