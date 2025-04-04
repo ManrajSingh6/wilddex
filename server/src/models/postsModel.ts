@@ -80,31 +80,27 @@ export async function createPost(
   insert: CreatePostInsert
 ): Promise<Post | undefined> {
   try {
-    // const postInsert = await dbClient
-    //   .insert(postsTable)
-    //   .values(insert)
-    //   .returning();
+    const postsInsert = await writeToDatabases<typeof postsTable>(postsTable, insert);
 
-    // if (postInsert.length < 1) {
-    //   throw new Error(`PostInsert Return Length: ${postInsert.length}`);
-    // }
-
-    const postInsert = await writeToDatabases<typeof postsTable>(postsTable, insert);
-    if(postInsert.forEach((entry) => entry === undefined)) {
-      return true;
+    if (postsInsert.every((insert) => insert === undefined)) {
+      // Failure,
+      throw new Error("All db inserts failed.")
     }
-    
 
-    const createdPost = postInsert[0];
+    const insertedPost = postsInsert.find((insert) => insert !== undefined)
 
-    const postUpvotes = await getPostUpvotes(createdPost.id);
+    if (!insertedPost) {
+      throw new Error("Failed to find inserted post")
+    }
+
+    const postUpvotes = await getPostUpvotes(insertedPost.id);
     if (postUpvotes === undefined) {
       throw new Error(
-        `Error fetching post upvotes for Post ID: ${createdPost.id}`
+        `Error fetching post upvotes for Post ID: ${insertedPost.id}`
       );
     }
 
-    return { ...createdPost, upvotes: postUpvotes };
+    return { ...insertedPost, upvotes: postUpvotes };
   } catch (error) {
     console.error(`Error creating post in database: ${JSON.stringify(error)}`);
     return undefined;

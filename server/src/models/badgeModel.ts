@@ -22,11 +22,7 @@ export async function getBadgesByUserId(
 export async function assignBadgeToUser(
   insert: AssignBadgeInsert
 ): Promise<boolean> {
-  const success = await writeToDatabases(badgesTable, insert);
-  if(success.includes(true)) {
-    return true;
-  }
-  return false;
+  //TODO
 }
 
 export async function doesUserHaveBadge(
