@@ -1,7 +1,8 @@
 import { and, eq } from "drizzle-orm";
-import { dbClient } from "../index";
+import { dbClient, replica2DbClient, replicaDbClient } from "../index";
 import { AssignBadgeInsert, Badge } from "../types";
 import { badgesTable } from "../db/schema";
+import { writeToDatabases } from "../db/dbIO";
 
 export async function getBadgesByUserId(
   userId: number
@@ -21,13 +22,11 @@ export async function getBadgesByUserId(
 export async function assignBadgeToUser(
   insert: AssignBadgeInsert
 ): Promise<boolean> {
-  try {
-    await dbClient.insert(badgesTable).values(insert);
+  const success = await writeToDatabases(badgesTable, insert);
+  if(success.includes(true)) {
     return true;
-  } catch (error) {
-    console.error(`Error assigning badge to user: ${JSON.stringify(error)}`);
-    return false;
   }
+  return false;
 }
 
 export async function doesUserHaveBadge(

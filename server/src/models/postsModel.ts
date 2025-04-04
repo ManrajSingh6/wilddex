@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { dbClient } from "../index";
 import { postsTable, upvotesTable } from "../db/schema";
 import { CreatePostInsert, Post } from "../types";
+import { writeToDatabases } from "../db/dbIO";
 
 export async function getPostById(
   postId: number
@@ -79,14 +80,20 @@ export async function createPost(
   insert: CreatePostInsert
 ): Promise<Post | undefined> {
   try {
-    const postInsert = await dbClient
-      .insert(postsTable)
-      .values(insert)
-      .returning();
+    // const postInsert = await dbClient
+    //   .insert(postsTable)
+    //   .values(insert)
+    //   .returning();
 
-    if (postInsert.length < 1) {
-      throw new Error(`PostInsert Return Length: ${postInsert.length}`);
+    // if (postInsert.length < 1) {
+    //   throw new Error(`PostInsert Return Length: ${postInsert.length}`);
+    // }
+
+    const postInsert = await writeToDatabases<typeof postsTable>(postsTable, insert);
+    if(postInsert.forEach((entry) => entry === undefined)) {
+      return true;
     }
+    
 
     const createdPost = postInsert[0];
 
