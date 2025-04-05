@@ -5,6 +5,8 @@ interface FetchWithProxyInput {
   readonly body?: BodyInit | null | undefined;
 }
 
+const maxRetries = 3;
+
 export async function fetchWithProxy(
   input: FetchWithProxyInput
 ): Promise<Response> {
@@ -14,38 +16,69 @@ export async function fetchWithProxy(
   const backupProxyUrl = (import.meta.env.VITE_BACKUP_PROXY_URL ||
     "") as string;
 
-  try {
-    console.log(`Primary Proxy URL: ${primaryProxyUrl}`);
-    const primaryHealthCheck = await fetch(`${primaryProxyUrl}/health`);
+  for(var fetchTries = 0; fetchTries < maxRetries; fetchTries++) {
+    try {
+      console.log(`Primary Proxy URL: ${primaryProxyUrl}`);
+      const primaryHealthCheck = await fetch(`${primaryProxyUrl}/health`);
 
-    if (primaryHealthCheck.ok) {
-      return await fetch(`${primaryProxyUrl}/api/${endpoint}`, {
-        method,
-        headers,
-        body,
-      });
-    } else {
-      console.warn("Primary proxy is down. Attempting to use backup proxy.");
+      if (primaryHealthCheck.ok) {
+        console.log(`Primary proxy fetch attempt # ${fetchTries}`);
+        const response = await fetch(`${primaryProxyUrl}/api/${endpoint}`, {
+          method,
+          headers,
+          body,
+        });
+
+        if (response.ok || fetchTries === maxRetries-1) {
+          return response
+        }
+        
+        if (response.status === 404) {
+          return response
+        }
+
+      } else {
+        if(fetchTries === maxRetries-1) {
+          console.warn("Primary proxy is down. Attempting to use backup proxy.");
+        }
+      }
+    } catch (error) {
+      if (fetchTries === maxRetries-1) {
+        console.error(`Error in primary proxy fetch: ${error}`);
+      }
     }
-  } catch (error) {
-    console.error(`Error in primary proxy fetch: ${error}`);
   }
 
-  try {
-    console.log(`Backup Proxy URL: ${backupProxyUrl}`);
-    const backupHealthCheck = await fetch(`${backupProxyUrl}/health`);
+  for(var fetchTries = 0; fetchTries < maxRetries; fetchTries++) {
+    try {
+      console.log(`Backup Proxy URL: ${backupProxyUrl}`);
+      const backupHealthCheck = await fetch(`${backupProxyUrl}/health`);
+      console.log(`Backup proxy fetch attempt # ${fetchTries}`);
+      if (backupHealthCheck.ok) {
+        const response = await fetch(`${backupProxyUrl}/api/${endpoint}`, {
+          method,
+          headers,
+          body,
+        });
 
-    if (backupHealthCheck.ok) {
-      return await fetch(`${backupProxyUrl}/api/${endpoint}`, {
-        method,
-        headers,
-        body,
-      });
-    } else {
-      throw new Error("Both proxies are down.");
+        if (response.ok || fetchTries === maxRetries-1) {
+          return response
+        }
+        
+        if (response.status === 404) {
+          return response
+        }
+
+      } else {
+        if(fetchTries === maxRetries-1) {
+          throw new Error("Both proxies are down.");
+        }
+      }
+    } catch (error) {
+      if(fetchTries === maxRetries-1) {
+        console.error(`Error in backup proxy fetch: ${error}`);
+      }
     }
-  } catch (error) {
-    console.error(`Error in backup proxy fetch: ${error}`);
-    throw new Error("Both primary and backup proxies are down.");
   }
+  throw new Error("Both primary and backup proxies are down.");
 }
