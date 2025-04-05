@@ -5,6 +5,40 @@ export async function syncAllData(
   src: typeof dbClient,
   target: typeof dbClient
 ): Promise<undefined> {
+  // Create the "users" table
+  await target.execute(`
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR NOT NULL,
+      email VARCHAR NOT NULL UNIQUE,
+      password VARCHAR NOT NULL
+    );
+  `);
+
+  // Create the "posts" table
+  await target.execute(`
+    CREATE TABLE IF NOT EXISTS posts (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      animal VARCHAR(255) NOT NULL,
+      notes VARCHAR,
+      conservation_notes TEXT NOT NULL,
+      image_url VARCHAR NOT NULL,
+      latitude DOUBLE PRECISION NOT NULL,
+      longitude DOUBLE PRECISION NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT now() NOT NULL
+    );
+  `);
+
+  // Create the "upvotes" table
+  await target.execute(`
+    CREATE TABLE IF NOT EXISTS upvotes (
+      id SERIAL PRIMARY KEY,
+      post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
+    );
+  `);
+
   let schema = [upvotesTable, postsTable, usersTable];
 
   try {
@@ -13,9 +47,6 @@ export async function syncAllData(
     for (const [tableName, table] of Object.entries(schema)) {
       console.log(`Fetching data from src: ${tableName}`);
       const data = await src.select().from(table);
-
-      console.log(`Clearing data in target: ${tableName}`);
-      await target.delete(table);
 
       console.log(`Inserting into target: ${tableName}`);
       if (data.length > 0) {
