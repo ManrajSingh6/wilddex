@@ -9,7 +9,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 export const usersTable = pgTable("users", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  id: integer().primaryKey().generatedByDefaultAsIdentity(),
   name: varchar().notNull(),
   email: varchar().notNull().unique(),
   password: varchar().notNull(),
@@ -20,7 +20,7 @@ export const userRelations = relations(usersTable, ({ many }) => ({
 }));
 
 export const postsTable = pgTable("posts", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  id: integer().primaryKey().generatedByDefaultAsIdentity(),
   userId: integer("user_id")
     .notNull()
     .references(() => usersTable.id, {
@@ -42,7 +42,7 @@ export const postsTable = pgTable("posts", {
 });
 
 export const upvotesTable = pgTable("upvotes", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  id: integer().primaryKey().generatedByDefaultAsIdentity(),
   postId: integer("post_id")
     .notNull()
     .references(() => postsTable.id, {

@@ -87,9 +87,6 @@ services:
       - ./server:/app
       - /app/node_modules
     depends_on:
-      - db-primary
-      - db-replica
-      - db-replica2
       - redis-cache
     environment:
       - PORT=4000
@@ -110,9 +107,6 @@ services:
       - ./server:/app
       - /app/node_modules
     depends_on:
-      - db-primary
-      - db-replica
-      - db-replica2
       - redis-cache
     environment:
       - PORT=4001
@@ -133,9 +127,6 @@ services:
       - ./server:/app
       - /app/node_modules
     depends_on:
-      - db-primary
-      - db-replica
-      - db-replica2
       - redis-cache
     environment:
       - PORT=4002

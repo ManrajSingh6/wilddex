@@ -33,8 +33,8 @@ export const replica2DbClient = createDbClient(
 
 type dbClientType = typeof dbClient;
 
-export const downDBs: dbClientType[] = [];
-export const activeDBs: dbClientType[] = [
+export let downDBs: dbClientType[] = [];
+export let activeDBs: dbClientType[] = [
   dbClient,
   replica2DbClient,
   replicaDbClient,
@@ -137,3 +137,11 @@ const job = new CronJob(
     console.error("❌ Error running manageDatabaseCluster on startup:", error);
   }
 })();
+
+export function setActiveDbs(dbs: dbClientType[]) {
+  activeDBs = dbs;
+}
+
+export function setDownDbs(dbs: dbClientType[]) {
+  downDBs = dbs;
+}

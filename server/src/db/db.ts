@@ -8,7 +8,10 @@ export function createDbClient(dbUrl: string): DbClient {
   const pool = new Pool({
     connectionString: dbUrl,
   });
-
+  pool.on("error", (err) => {
+    console.error("Database client error:", err);
+    // Optionally, update your activeDBs/downDBs arrays here.
+  });
   return drizzle(pool, {
     schema,
   });

@@ -9,6 +9,8 @@ import {
   downDBs,
   replica2DbClient,
   replicaDbClient,
+  setActiveDbs,
+  setDownDbs,
 } from "..";
 
 dotenv.config();
@@ -259,20 +261,18 @@ export async function manageDatabaseCluster() {
 
         syncAllData(activeDBs[0], dbClient);
         activeDBs.push(dbClient);
-        const index = downDBs.indexOf(dbClient);
-        if (index !== -1) {
-          downDBs.splice(index, 1);
-        }
+
+        const filteredDownDbs = downDBs.filter((ddb) => ddb !== dbClient);
+        setDownDbs(filteredDownDbs);
       }
     } else {
       console.log("DB1 is down");
       if (!downDBs.includes(dbClient)) {
         console.log("Removing DB1 form active DB group");
         downDBs.push(dbClient);
-        const index = activeDBs.indexOf(dbClient);
-        if (index !== -1) {
-          activeDBs.splice(index, 1);
-        }
+
+        const filteredActiveDBs = activeDBs.filter((adb) => adb !== dbClient);
+        setActiveDbs(filteredActiveDBs);
       }
     }
     if (isReplicaDBAlive) {
@@ -283,20 +283,20 @@ export async function manageDatabaseCluster() {
 
         syncAllData(activeDBs[0], replicaDbClient);
         activeDBs.push(replicaDbClient);
-        const index = downDBs.indexOf(replicaDbClient);
-        if (index !== -1) {
-          downDBs.splice(index, 1);
-        }
+        const filteredDownDbs = downDBs.filter(
+          (ddb) => ddb !== replicaDbClient
+        );
+        setDownDbs(filteredDownDbs);
       }
     } else {
       console.log("DB2 is down");
       if (!downDBs.includes(replicaDbClient)) {
         console.log("Removing DB1 form active DB group");
         downDBs.push(replicaDbClient);
-        const index = activeDBs.indexOf(replicaDbClient);
-        if (index !== -1) {
-          activeDBs.splice(index, 1);
-        }
+        const filteredActiveDBs = activeDBs.filter(
+          (adb) => adb !== replicaDbClient
+        );
+        setActiveDbs(filteredActiveDBs);
       }
     }
     if (isReplica2DBAlive) {
@@ -307,20 +307,20 @@ export async function manageDatabaseCluster() {
 
         syncAllData(activeDBs[0], replica2DbClient);
         activeDBs.push(replica2DbClient);
-        const index = downDBs.indexOf(replica2DbClient);
-        if (index !== -1) {
-          downDBs.splice(index, 1);
-        }
+        const filteredDownDbs = downDBs.filter(
+          (ddb) => ddb !== replica2DbClient
+        );
+        setDownDbs(filteredDownDbs);
       }
     } else {
       console.log("DB3 is down");
       if (!downDBs.includes(replica2DbClient)) {
         console.log("Removing DB3 form active DB group");
         downDBs.push(replica2DbClient);
-        const index = activeDBs.indexOf(replica2DbClient);
-        if (index !== -1) {
-          activeDBs.splice(index, 1);
-        }
+        const filteredActiveDBs = activeDBs.filter(
+          (adb) => adb !== replica2DbClient
+        );
+        setActiveDbs(filteredActiveDBs);
       }
     }
 

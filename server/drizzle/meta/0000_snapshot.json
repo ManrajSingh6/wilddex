@@ -1,5 +1,5 @@
 {
-  "id": "5b10104c-0f99-4914-a999-96dda94caa7f",
+  "id": "72dad49d-a79c-4131-b7e9-402f8ce4a407",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -14,7 +14,7 @@
           "primaryKey": true,
           "notNull": true,
           "identity": {
-            "type": "always",
+            "type": "byDefault",
             "name": "posts_id_seq",
             "schema": "public",
             "increment": "1",
@@ -107,7 +107,7 @@
           "primaryKey": true,
           "notNull": true,
           "identity": {
-            "type": "always",
+            "type": "byDefault",
             "name": "upvotes_id_seq",
             "schema": "public",
             "increment": "1",
@@ -176,7 +176,7 @@
           "primaryKey": true,
           "notNull": true,
           "identity": {
-            "type": "always",
+            "type": "byDefault",
             "name": "users_id_seq",
             "schema": "public",
             "increment": "1",
