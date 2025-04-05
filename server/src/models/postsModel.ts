@@ -2,17 +2,23 @@ import { and, eq } from "drizzle-orm";
 import { dbClient } from "../index";
 import { postsTable, upvotesTable } from "../db/schema";
 import { CreatePostInsert, Post } from "../types";
-import { readFromDatabases, writeToDatabases } from "../db/dbIO";
+import {
+  deleteFromDatabases,
+  readFromDatabases,
+  writeToDatabases,
+} from "../db/dbIO";
 
 export async function getPostById(
   postId: number
 ): Promise<Post | null | undefined> {
   try {
-    const post = await dbClient.query.postsTable.findFirst({
-      where: eq(postsTable.id, postId),
-    });
+    const allDbInserts = await readFromDatabases(postsTable, { id: postId });
+    if (!allDbInserts) {
+      throw new Error("Failed to fetch post from all databases");
+    }
+    const postFromAllDb = allDbInserts.find((post) => post.id === postId);
 
-    if (!post) {
+    if (!postFromAllDb) {
       return null;
     }
 
@@ -21,7 +27,7 @@ export async function getPostById(
       throw new Error(`Error fetching post upvotes for Post ID: ${postId}`);
     }
 
-    return { ...post, upvotes: postUpvotes };
+    return { ...postFromAllDb, upvotes: postUpvotes };
   } catch (error) {
     console.error(
       `Error fetching post from database: ${JSON.stringify(error)}`
@@ -121,7 +127,7 @@ export async function getPostUpvotes(
   try {
     const upvotes = await readFromDatabases(upvotesTable, { postId });
 
-    if (!upvotes) {
+    if (upvotes === undefined) {
       throw new Error("Failed to fetch upvotes from all databases");
     }
 
@@ -141,27 +147,17 @@ export async function updatePostVotes(
 ): Promise<boolean> {
   try {
     if (operation === "increment") {
-      await dbClient.insert(upvotesTable).values({
-        postId,
-        userId,
-      });
-
+      // Write to all active databases without duplicating the primary insertion.
       const allDbInserts = await writeToDatabases(upvotesTable, {
         postId,
         userId,
       });
-
       if (allDbInserts.every((insert) => insert === undefined)) {
         throw new Error("Failed to insert into all databases");
       }
     } else {
-      await dbClient
-        .delete(upvotesTable)
-        .where(
-          and(eq(upvotesTable.postId, postId), eq(upvotesTable.userId, userId))
-        );
+      await deleteFromDatabases(upvotesTable, { postId, userId });
     }
-
     return true;
   } catch (error) {
     console.error(
@@ -176,12 +172,15 @@ export async function getUpvoteByPostIdAndUserId(
   userId: number
 ): Promise<boolean | undefined> {
   try {
-    const upvote = await dbClient.query.upvotesTable.findFirst({
-      where: and(
-        eq(upvotesTable.postId, postId),
-        eq(upvotesTable.userId, userId)
-      ),
-    });
+    const upvotes = await readFromDatabases(upvotesTable, { postId, userId });
+
+    if (!upvotes) {
+      throw new Error("Failed to fetch upvotes from all databases");
+    }
+
+    const upvote = upvotes.find(
+      (upvote) => upvote.postId === postId && upvote.userId === userId
+    );
 
     return upvote !== undefined;
   } catch (error) {
@@ -196,11 +195,13 @@ export async function getPostUpvotesByUserId(
   userId: number
 ): Promise<readonly number[] | undefined> {
   try {
-    const upvotes = await dbClient.query.upvotesTable.findMany({
-      where: eq(upvotesTable.userId, userId),
-    });
+    const allDbInserts = await readFromDatabases(upvotesTable, { userId });
 
-    return upvotes.map((upvote) => upvote.postId);
+    if (!allDbInserts) {
+      throw new Error("Failed to fetch upvotes from all databases");
+    }
+
+    return allDbInserts.map((upvote) => upvote.postId);
   } catch (error) {
     console.error(
       `Error fetching upvotes from database: ${JSON.stringify(error)}`

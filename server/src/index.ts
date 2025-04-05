@@ -34,7 +34,11 @@ export const replica2DbClient = createDbClient(
 type dbClientType = typeof dbClient;
 
 export const downDBs: dbClientType[] = [];
-export const activeDBs: dbClientType[] = [dbClient, replica2DbClient, replicaDbClient];
+export const activeDBs: dbClientType[] = [
+  dbClient,
+  replica2DbClient,
+  replicaDbClient,
+];
 
 app.use(express.json({ limit: "50mb" }));
 

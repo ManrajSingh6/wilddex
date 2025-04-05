@@ -61,12 +61,17 @@ export async function readFromDatabases<T extends PgTable>(
 
   // Use the combined filters in your query.
   for (const client of activeDBs) {
-    const res = await client
-      .select()
-      .from(dbTable as any)
-      .where(and(...filters));
-    if (res && res.length > 0) {
-      return res as InferSelectModel<T>[];
+    try {
+      const res = await client
+        .select()
+        .from(dbTable as any)
+        .where(and(...filters));
+
+      if (res) {
+        return res as InferSelectModel<T>[];
+      }
+    } catch (error) {
+      console.error(`Didnt find anything in ${client} for ${dbTable}`);
     }
   }
   return undefined;
@@ -76,12 +81,23 @@ export async function deleteFromDatabases<T extends PgTable>(
   dbTable: T,
   condition: Partial<InferSelectModel<T>>
 ): Promise<(InferSelectModel<T>[] | undefined)[]> {
+  // Build an array of conditions using eq for each key in the condition object.
+  const filters = Object.entries(condition).map(([key, value]) => {
+    // Cast the key to a key of dbTable.
+    // Make sure that the key corresponds to a valid column.
+    const column = dbTable[key as keyof T] as any;
+    return eq(column, value);
+  });
+
+  // Combine the filters with 'and'
+  const whereCondition = and(...filters);
+
   return await Promise.all(
     activeDBs.map(async (db) => {
-      // Execute the delete query and capture the result.
+      // Execute the delete query with the built condition
       const res: any = await db
         .delete(dbTable as any)
-        .where(condition as any)
+        .where(whereCondition)
         .returning();
 
       // Determine if 'res' is an array or a QueryResult with rows.
@@ -94,7 +110,6 @@ export async function deleteFromDatabases<T extends PgTable>(
         resultArray = [];
       }
 
-      // Return the rows if any were deleted; otherwise undefined.
       return resultArray.length > 0
         ? (resultArray as InferSelectModel<T>[])
         : undefined;
