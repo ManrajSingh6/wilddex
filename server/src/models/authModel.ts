@@ -4,7 +4,7 @@ import { usersTable } from "../db/schema";
 import { User } from "../types";
 import { activeDBs, dbClient } from "../index";
 import * as bcryptjs from "bcryptjs";
-import { writeToDatabases } from "../db/dbIO";
+import { readFromDatabases, writeToDatabases } from "../db/dbIO";
 
 const SALT_ROUNDS = 10;
 
@@ -41,9 +41,19 @@ export async function addUserAccount(
 
 export async function getUserById(id: number): Promise<User | undefined> {
   try {
-    return await dbClient.query.usersTable.findFirst({
-      where: eq(usersTable.id, id),
-    });
+    const allReads = await readFromDatabases(usersTable, { id });
+
+    if (!allReads) {
+      throw new Error("Failed to fetch user from all databases");
+    }
+
+    const foundUser = allReads.find((user) => user.id === id);
+
+    if (!foundUser) {
+      throw new Error(`User with id ${id} not found`);
+    }
+
+    return foundUser;
   } catch (error) {
     console.error(
       `Error fetching user from database by id (${id}): ${JSON.stringify(
@@ -56,14 +66,22 @@ export async function getUserById(id: number): Promise<User | undefined> {
 
 export async function getUserByEmail(email: string): Promise<User | undefined> {
   try {
-    return await dbClient.query.usersTable.findFirst({
-      where: eq(usersTable.email, email),
-    });
+    const allReads = await readFromDatabases(usersTable, { email });
+
+    if (!allReads) {
+      throw new Error("Failed to fetch user from all databases");
+    }
+
+    const foundUser = allReads.find((user) => user.email === email);
+
+    if (!foundUser) {
+      throw new Error(`User with id ${email} not found`);
+    }
+
+    return foundUser;
   } catch (error) {
     console.error(
-      `Error fetching user from database by email (${email}): ${JSON.stringify(
-        error
-      )}`
+      `Error fetching user from database by email (${email}): ${error}`
     );
     return undefined;
   }
@@ -74,26 +92,17 @@ export async function doUserPasswordsMatch(
   inputPassword: string
 ): Promise<boolean> {
   try {
-    let row;
-    for (const client of activeDBs) {
-      const res = await client
-        .select({
-          password: usersTable.password,
-        })
-        .from(usersTable)
-        .where(eq(usersTable.id, userId));
-
-      if (res && res.length > 0) {
-        row = res[0];
-        break;
-      }
+    const foundUsers = await readFromDatabases(usersTable, { id: userId });
+    if (!foundUsers) {
+      throw new Error("Failed to fetch user from all databases");
     }
 
-    if (!row) {
+    const foundUser = foundUsers.find((user) => user.id === userId);
+    if (!foundUser) {
       throw new Error(`User with id ${userId} not found`);
     }
 
-    return await bcryptjs.compare(inputPassword, row.password);
+    return await bcryptjs.compare(inputPassword, foundUser.password);
   } catch (error) {
     console.error(
       `Error fetching checking password for userId (${userId}): ${JSON.stringify(

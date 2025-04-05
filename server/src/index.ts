@@ -127,6 +127,7 @@ const job = new CronJob(
   true, // start
   "America/Los_Angeles" // timeZone
 );
+
 (async () => {
   try {
     await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait for 5 seconds

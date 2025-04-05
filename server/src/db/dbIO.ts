@@ -14,18 +14,25 @@ export async function writeToDatabases<T extends PgTable>(
 ) {
   return await Promise.all(
     activeDBs.map(async (client) => {
-      const insertSuccess = await client
-        .insert(dbTable)
-        .values(dbInsert)
-        .returning();
+      try {
+        const insertSuccess = await client
+          .insert(dbTable)
+          .values(dbInsert)
+          .returning();
 
-      if (!insertSuccess || insertSuccess.length === 0) {
+        if (!insertSuccess || insertSuccess.length === 0) {
+          return undefined;
+        }
+
+        const insertedRow = insertSuccess[0];
+
+        return insertedRow as InferSelectModel<T>;
+      } catch (error) {
+        console.error(
+          `Error writing to database ${client} for table ${dbTable}: ${error}`
+        );
         return undefined;
       }
-
-      const insertedRow = insertSuccess[0];
-
-      return insertedRow as InferSelectModel<T>;
     })
   );
 }
@@ -37,9 +44,16 @@ export async function readFromDatabases<T extends PgTable>(
   // If no condition is provided, return all rows
   if (!condition) {
     for (const client of activeDBs) {
-      const res = await client.select().from(dbTable as any);
-      if (res && res.length > 0) {
-        return res as InferSelectModel<T>[];
+      try {
+        const res = await client.select().from(dbTable as any);
+        if (res) {
+          return res as InferSelectModel<T>[];
+        }
+      } catch (error) {
+        console.error(
+          `Error reading from database ${client} for table ${dbTable}: ${error}`
+        );
+        continue;
       }
     }
     return undefined;
@@ -71,7 +85,10 @@ export async function readFromDatabases<T extends PgTable>(
         return res as InferSelectModel<T>[];
       }
     } catch (error) {
-      console.error(`Didnt find anything in ${client} for ${dbTable}`);
+      console.error(
+        `Didnt find anything in ${client} for ${dbTable}: ${error}`
+      );
+      continue;
     }
   }
   return undefined;
