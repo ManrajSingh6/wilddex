@@ -118,7 +118,7 @@ wsServer.on("connection", (ws: WebSocket) => {
 });
 
 const job = new CronJob(
-  "* * * * *", // cronTime every minute
+  "* * * * * *", // every seconds
   async () => {
     // Wrap manageDatabaseCluster in an async function
     await manageDatabaseCluster();
