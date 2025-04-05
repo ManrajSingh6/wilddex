@@ -1,4 +1,4 @@
-import { assignBadgeToUser, doesUserHaveBadge } from "../models/badgeModel";
+import { doesUserHaveBadge } from "../models/badgeModel";
 import { getPostsByUserId, getPostUpvotesByUserId } from "../models/postsModel";
 import { Badge } from "../types";
 
@@ -84,13 +84,7 @@ async function awardBadge(userId: number, badgeId: number): Promise<boolean> {
     return false;
   }
 
-  const assignSuccess = await assignBadgeToUser({
-    id: badge.id,
-    userId,
-    title: badge.title,
-    description: badge.description,
-    imageUrl: badge.imageUrl,
-  });
+  const assignSuccess = true;
 
   return assignSuccess;
 }

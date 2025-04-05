@@ -19,12 +19,6 @@ export async function getBadgesByUserId(
   }
 }
 
-export async function assignBadgeToUser(
-  insert: AssignBadgeInsert
-): Promise<boolean> {
-  //TODO
-}
-
 export async function doesUserHaveBadge(
   bagdeId: number,
   userId: number
