@@ -56,7 +56,7 @@ services:
       - wilddex-network
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: wilddex2
+      POSTGRES_PASSWORD: wilddex
       POSTGRES_DB: wilddex-replica2-db
 
   redis-cache:
