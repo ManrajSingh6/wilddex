@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import { eq } from "drizzle-orm";
 import { usersTable } from "../db/schema";
 import { User } from "../types";
-import { dbClient } from "../index";
+import { activeDBs, dbClient } from "../index";
 import * as bcryptjs from "bcryptjs";
 
 const SALT_ROUNDS = 10;
@@ -68,12 +68,20 @@ export async function doUserPasswordsMatch(
   inputPassword: string
 ): Promise<boolean> {
   try {
-    const [row] = await dbClient
-      .select({
-        password: usersTable.password,
-      })
-      .from(usersTable)
-      .where(eq(usersTable.id, userId));
+    let row;
+    for (const client of activeDBs) {
+      const res = await client
+        .select({
+          password: usersTable.password,
+        })
+        .from(usersTable)
+        .where(eq(usersTable.id, userId));
+
+      if (res && res.length > 0) {
+        row = res[0];
+        break;
+      }
+    }
 
     if (!row) {
       throw new Error(`User with id ${userId} not found`);

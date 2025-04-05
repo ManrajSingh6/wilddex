@@ -20,3 +20,20 @@ export async function writeToDatabases<T extends PgTable>(
     })
   );
 }
+
+export async function readFromDatabases<T extends PgTable>(
+  dbTable: T,
+  condition: Partial<InferSelectModel<T>>
+): Promise<(any | undefined)> {
+  for (const client of activeDBs) {
+    const res = await client
+      .select()
+      .from(dbTable as any)
+      .where(condition as any);
+
+    if (res && res.length > 0) {
+      return res;
+    }
+  }
+  return undefined;
+}
