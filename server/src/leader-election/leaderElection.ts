@@ -3,7 +3,13 @@ import { databaseHealth } from "./db-health-sync";
 import { WebSocket } from "ws";
 import dotenv from "dotenv";
 import { syncAllData } from "../db/synchronisation";
-import { activeDBs, dbClient, downDBs, replica2DbClient, replicaDbClient } from "..";
+import {
+  activeDBs,
+  dbClient,
+  downDBs,
+  replica2DbClient,
+  replicaDbClient,
+} from "..";
 
 dotenv.config();
 
@@ -231,9 +237,11 @@ export async function manageDatabaseCluster() {
   const LE = await leader_election();
 
   if (isLeader) {
-    console.log("Leader Checking the DBs health\nBefore Health Check the DBs looklike");
-    console.log("Down DBs: ", downDBs);
-    console.log("Active DBs: ", activeDBs);
+    console.log(
+      "Leader Checking the DBs health\nBefore Health Check the DBs looklike"
+    );
+    // console.log("Down DBs: ", downDBs);
+    // console.log("Active DBs: ", activeDBs);
 
     const dbPrimaryHealth = await databaseHealth("primary");
     const dbReplicaHealth = await databaseHealth("replica");
@@ -317,7 +325,7 @@ export async function manageDatabaseCluster() {
     }
 
     console.log("The status of DBs after leader checkup:");
-    console.log("Down DBs: ", downDBs);
-    console.log("Active DBs: ", activeDBs);
+    // console.log("Down DBs: ", downDBs);
+    // console.log("Active DBs: ", activeDBs);
   }
 }
