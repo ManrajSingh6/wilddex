@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { faker } from "@faker-js/faker";
 import { createDbClient } from "./db";
-import { usersTable, badgesTable, postsTable, upvotesTable } from "./schema";
+import { usersTable, postsTable, upvotesTable } from "./schema";
 
 const MOCK_BADGE_IMAGES = [
   "https://static.vecteezy.com/system/resources/previews/048/687/322/non_2x/trophy-award-with-stars-in-pixel-art-style-vector.jpg",
@@ -38,16 +38,6 @@ async function seedDatabase() {
       .returning();
 
     const user = userInsert[0];
-
-    for (let badgeIdx = 0; badgeIdx < 3; badgeIdx++) {
-      await dbClient.insert(badgesTable).values({
-        id: badgeIdx + user.id,
-        userId: user.id,
-        title: `Badge #${badgeIdx + 1}`,
-        description: `Nice job! You got a badge for ${badgeIdx + 1}!`,
-        imageUrl: MOCK_BADGE_IMAGES[badgeIdx],
-      });
-    }
 
     for (let postIdx = 1; postIdx < 4; postIdx++) {
       const type = faker.animal.type();

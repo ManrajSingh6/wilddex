@@ -3,7 +3,6 @@ import {
   doublePrecision,
   integer,
   pgTable,
-  primaryKey,
   text,
   timestamp,
   varchar,
@@ -17,7 +16,6 @@ export const usersTable = pgTable("users", {
 });
 
 export const userRelations = relations(usersTable, ({ many }) => ({
-  badges: many(badgesTable), // A user can have many badges
   posts: many(postsTable),
 }));
 
@@ -42,34 +40,6 @@ export const postsTable = pgTable("posts", {
     .defaultNow()
     .notNull(),
 });
-
-export const badgesTable = pgTable(
-  "badges",
-  {
-    id: integer().notNull(),
-    userId: integer("user_id")
-      .notNull()
-      .references(() => usersTable.id, {
-        onDelete: "cascade",
-        onUpdate: "no action",
-      }),
-    title: varchar({ length: 255 }).notNull(),
-    description: varchar().notNull(),
-    imageUrl: varchar("image_url").notNull(),
-    dateEarned: timestamp("date_earned", {
-      withTimezone: true,
-      mode: "date",
-    })
-      .defaultNow()
-      .notNull(),
-  },
-  (table) => [
-    primaryKey({
-      name: "unique_id_userId_badge_pk",
-      columns: [table.id, table.userId],
-    }),
-  ]
-);
 
 export const upvotesTable = pgTable("upvotes", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),

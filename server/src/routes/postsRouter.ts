@@ -19,7 +19,6 @@ import {
 } from "../types";
 import { randomUUID } from "crypto";
 import { supabase } from "../supabase/supabase";
-import { checkAndAwardBadges } from "../utils/bagdes";
 import { io } from "../index";
 import { getUserById } from "../models/authModel";
 
@@ -244,8 +243,6 @@ postsRouter.post("/create", async (req: CreatePostRequestBody, res) => {
     );
     return;
   }
-
-  await checkAndAwardBadges(user.id);
 
   const newPostNotification: NewPostNotification = {
     notificationId: randomUUID(),
