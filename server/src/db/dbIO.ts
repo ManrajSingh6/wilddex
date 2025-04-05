@@ -1,22 +1,22 @@
 import { PgTable, pgTable } from "drizzle-orm/pg-core";
-import { dbClient, replicaDbClient, replica2DbClient } from "../index";
+import { dbClient, replicaDbClient, replica2DbClient, activeDBs } from "../index";
 import { InferInsertModel, InferSelectModel } from "drizzle-orm";
 
 export async function writeToDatabases<T extends PgTable>(
-    dbTable: T,
-    dbInsert: InferInsertModel<T>
-  ) {
-    return await Promise.all(
-      [dbClient, replicaDbClient, replica2DbClient].map(async (client) => {
-        const insertSuccess = await client.insert(dbTable).values(dbInsert).returning();
+  dbTable: T,
+  dbInsert: InferInsertModel<T>
+) {
+  return await Promise.all(
+    activeDBs.map(async (client) => {
+      const insertSuccess = await client.insert(dbTable).values(dbInsert).returning();
 
-        if (!insertSuccess || insertSuccess.length === 0) {
-          return undefined
-        }
+      if (!insertSuccess || insertSuccess.length === 0) {
+        return undefined
+      }
 
-        const insertedRow = insertSuccess[0]
+      const insertedRow = insertSuccess[0]
 
-        return insertedRow as InferSelectModel<T>
-      })
-    );
-  }
+      return insertedRow as InferSelectModel<T>
+    })
+  );
+}
