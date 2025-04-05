@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { dbClient } from "../index";
 import { postsTable, upvotesTable } from "../db/schema";
 import { CreatePostInsert, Post } from "../types";
-import { writeToDatabases } from "../db/dbIO";
+import { readFromDatabases, writeToDatabases } from "../db/dbIO";
 
 export async function getPostById(
   postId: number
@@ -32,7 +32,11 @@ export async function getPostById(
 
 export async function getPosts(): Promise<readonly Post[] | undefined> {
   try {
-    const posts = await dbClient.query.postsTable.findMany();
+    const posts = await readFromDatabases(postsTable);
+
+    if (!posts) {
+      throw new Error("Failed to fetch posts from all databases");
+    }
 
     // For each post, asynchronously get the upvotes count
     const postsWithUpvotes = await Promise.all(
@@ -55,9 +59,11 @@ export async function getPostsByUserId(
   userId: number
 ): Promise<readonly Post[] | undefined> {
   try {
-    const posts = await dbClient.query.postsTable.findMany({
-      where: eq(postsTable.userId, userId),
-    });
+    const posts = await readFromDatabases(postsTable, { userId });
+
+    if (!posts) {
+      throw new Error("Failed to fetch posts from all databases");
+    }
 
     // For each post, asynchronously get the upvotes count
     const postsWithUpvotes = await Promise.all(
@@ -80,17 +86,19 @@ export async function createPost(
   insert: CreatePostInsert
 ): Promise<Post | undefined> {
   try {
-    const postsInsert = await writeToDatabases<typeof postsTable>(postsTable, insert);
+    const postsInsert = await writeToDatabases<typeof postsTable>(
+      postsTable,
+      insert
+    );
 
     if (postsInsert.every((insert) => insert === undefined)) {
-      // Failure,
-      throw new Error("All db inserts failed.")
+      throw new Error("All db inserts failed.");
     }
 
-    const insertedPost = postsInsert.find((insert) => insert !== undefined)
+    const insertedPost = postsInsert.find((insert) => insert !== undefined);
 
     if (!insertedPost) {
-      throw new Error("Failed to find inserted post")
+      throw new Error("Failed to find inserted post");
     }
 
     const postUpvotes = await getPostUpvotes(insertedPost.id);
@@ -111,10 +119,11 @@ export async function getPostUpvotes(
   postId: number
 ): Promise<number | undefined> {
   try {
-    const upvotes = await dbClient
-      .select()
-      .from(upvotesTable) // replace with the actual table holding likes/upvotes
-      .where(eq(upvotesTable.postId, postId));
+    const upvotes = await readFromDatabases(upvotesTable, { postId });
+
+    if (!upvotes) {
+      throw new Error("Failed to fetch upvotes from all databases");
+    }
 
     return upvotes.length;
   } catch (error) {
@@ -136,6 +145,15 @@ export async function updatePostVotes(
         postId,
         userId,
       });
+
+      const allDbInserts = await writeToDatabases(upvotesTable, {
+        postId,
+        userId,
+      });
+
+      if (allDbInserts.every((insert) => insert === undefined)) {
+        throw new Error("Failed to insert into all databases");
+      }
     } else {
       await dbClient
         .delete(upvotesTable)

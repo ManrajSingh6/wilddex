@@ -4,6 +4,7 @@ import { usersTable } from "../db/schema";
 import { User } from "../types";
 import { activeDBs, dbClient } from "../index";
 import * as bcryptjs from "bcryptjs";
+import { writeToDatabases } from "../db/dbIO";
 
 const SALT_ROUNDS = 10;
 
@@ -25,7 +26,12 @@ export async function addUserAccount(
       password: hashedPassword,
     };
 
-    await dbClient.insert(usersTable).values(insert);
+    const allDbInserts = await writeToDatabases(usersTable, insert);
+
+    if (allDbInserts.every((insert) => insert === undefined)) {
+      throw new Error("Failed to insert into all databases");
+    }
+
     return true;
   } catch (error) {
     console.error(`Error creating user account: ${JSON.stringify(error)}`);
