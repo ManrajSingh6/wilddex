@@ -15,7 +15,8 @@ import {
   leaderMsg,
   healthMsg,
   manageDatabaseCluster,
-  syncDBsNormally
+  syncDBsNormally,
+  leaderElection,
 } from "./leader-election/leaderElection";
 import { WebSocket } from "ws";
 
@@ -122,6 +123,7 @@ const job = new CronJob(
   "5 * * * * *", // every seconds
   async () => {
     // Wrap manageDatabaseCluster in an async function
+    await leaderElection();
     await manageDatabaseCluster();
     await syncDBsNormally();
   }, // onTick

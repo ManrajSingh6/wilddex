@@ -66,6 +66,7 @@ async function releaseLock(key: string): Promise<boolean> {
   // If the result is 1, it means the key was deleted (lock released)
   return result === 1;
 }
+
 redisClient.on("error", (err) => console.error("Redis Client Error", err));
 let clientConnected = false;
 
@@ -101,7 +102,6 @@ function failureDetector(leaderPort: number): Promise<boolean> {
       return;
     }
     const ws = new WebSocket(wsURL);
-    // const ws = new WebSocket(`ws://localhost:${id}`);
     let responded = false;
 
     ws.on("open", () => {
@@ -199,7 +199,7 @@ function notifyPeers(): void {
 }
 
 async function checkLeader(leaderPort: number | null): Promise<void> {
-  isLeader = PORT == leaderPort;
+  isLeader = PORT === leaderPort;
   console.log(`Current Leader: ${leaderPort}`);
   if (!leaderPort || (leaderPort < PORT && !running)) {
     initiateElection();
@@ -228,7 +228,7 @@ export function healthMsg(ws: WebSocket) {
   ws.send(JSON.stringify({ type: "ok" }));
 }
 
-export async function leader_election() {
+export async function leaderElection() {
   const redisConnection = await connectRedis();
   if (redisConnection) {
     leaderPort = await getLeaderFromRedis();
@@ -237,15 +237,10 @@ export async function leader_election() {
 }
 
 export async function manageDatabaseCluster() {
-  const LE = await leader_election();
-
   if (isLeader) {
     console.log(
       "Leader Checking the DBs health\nBefore Health Check the DBs looklike"
     );
-    // console.log("Down DBs: ", downDBs);
-    // console.log("Active DBs: ", activeDBs);
-
     const dbPrimaryHealth = await databaseHealth("primary");
     const dbReplicaHealth = await databaseHealth("replica");
     const dbReplica2Health = await databaseHealth("replica2");
@@ -326,24 +321,18 @@ export async function manageDatabaseCluster() {
     }
 
     console.log("The status of DBs after leader checkup:");
-    // console.log("Down DBs: ", downDBs);
-    // console.log("Active DBs: ", activeDBs);
   }
 }
 
-
 export async function syncDBsNormally() {
-  const LE = await leader_election();
-
   if (isLeader) {
-    console.log(
-      "Leader Performing Sync"
-    );
+    console.log("Leader Performing Sync");
 
-    if (activeDBs.length > 1){
+    if (activeDBs.length > 1) {
       console.log("Performing Database sync on Active Dbs");
-    
+
       checkDataDBs(activeDBs[0], activeDBs[1]);
+
       if (activeDBs.length >= 2) checkDataDBs(activeDBs[0], activeDBs[2]);
     }
   }

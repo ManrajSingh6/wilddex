@@ -67,32 +67,30 @@ export async function syncAllData(
   }
 }
 
-
 export async function checkDataDBs(
-  primary: typeof dbClient, 
-  replica: typeof dbClient, 
+  primary: typeof dbClient,
+  replica: typeof dbClient
 ): Promise<void> {
-  await syncTable(usersTable, ['email'], primary, replica);
-  await syncTable(postsTable, ['id'], primary, replica);
-  await syncTable(upvotesTable, ['id'], primary, replica);
+  await syncTable(usersTable, ["email"], primary, replica);
+  await syncTable(postsTable, ["id"], primary, replica);
+  await syncTable(upvotesTable, ["id"], primary, replica);
 }
 
 async function syncTable(
   table: Table,
-  uniqueKeys: (keyof Table['_']['columns'])[],
-  primary: typeof dbClient, 
-  replica: typeof dbClient, 
+  uniqueKeys: (keyof Table["_"]["columns"])[],
+  primary: typeof dbClient,
+  replica: typeof dbClient
 ) {
-  
   const [primaryRows, replicaRows] = await Promise.all([
     primary.select().from(table),
     replica.select().from(table),
   ]);
 
-  const uniqueKey = (row: any) => uniqueKeys.map(k => row[k]).join('|');
+  const uniqueKey = (row: any) => uniqueKeys.map((k) => row[k]).join("|");
 
-  const pMap = new Map(primaryRows.map(row => [uniqueKey(row), row]));
-  const rMap1 = new Map(replicaRows.map(row => [uniqueKey(row), row]));
+  const pMap = new Map(primaryRows.map((row) => [uniqueKey(row), row]));
+  const rMap1 = new Map(replicaRows.map((row) => [uniqueKey(row), row]));
 
   if (mapsAreEqual(pMap, rMap1)) {
     console.log(`✅ {} and Replica are already in sync.`);
@@ -102,19 +100,19 @@ async function syncTable(
   // Rows missing in target
   for (const [key, row] of pMap.entries()) {
     if (!rMap1.has(key)) {
-      await replica.insert(table).values(row); 
+      await replica.insert(table).values(row);
     }
   }
 
   // Rows missing in source
   for (const [key, row] of rMap1.entries()) {
     if (!pMap.has(key)) {
-      await primary.insert(table).values(row); 
+      await primary.insert(table).values(row);
     }
   }
 }
 
-// check if tables are equal already 
+// check if tables are equal already
 function mapsAreEqual(map1: Map<string, any>, map2: Map<string, any>): boolean {
   if (map1.size !== map2.size) return false;
   for (const [key, val1] of map1) {
