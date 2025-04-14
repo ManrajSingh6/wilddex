@@ -1,4 +1,4 @@
-import { createClient } from "redis";
+import { createClient, RedisClientType } from "redis";
 import { databaseHealth } from "./db-health-sync";
 import { WebSocket } from "ws";
 import dotenv from "dotenv";
@@ -13,6 +13,7 @@ import {
   setActiveDbs,
   setDownDbs,
 } from "..";
+import { redisClient } from "./redis";
 
 dotenv.config();
 
@@ -33,54 +34,6 @@ const PEER_PORT_HOST_MAPPING = new Map<number, string>([
 export function getWebSocketUrl(port: number): string | undefined {
   const host = PEER_PORT_HOST_MAPPING.get(port);
   return host ? `ws://${host}:${port}` : undefined;
-}
-
-const REDIS_PORT = process.env.REDIS_PORT || 6379;
-const REDIS_HOST = "redis-cache";
-
-console.log(`Connecting to Redis: redis://${REDIS_HOST}:${REDIS_PORT}`);
-console.log(`PORT: ${PORT}`);
-
-const redisClient = createClient({
-  url: `redis://${REDIS_HOST}:${REDIS_PORT}`,
-});
-
-async function acquireLock(key: string, ttl: number): Promise<boolean> {
-  console.log("TRYING TO GET KEY");
-  const result: string | null = await redisClient.set(key, "locked", {
-    NX: true, // "NX" means set the key only if it does not already exist
-    PX: ttl, // "PX" sets the expiration time in milliseconds
-  });
-  console.log(`RESULT: ${result}`);
-  return result === "OK"; // Lock acquired successfully
-}
-
-async function releaseLock(key: string): Promise<boolean> {
-  console.log("TRYING TO RELEASE KEY");
-
-  // Use the DEL command to delete the key
-  const result: number = await redisClient.del(key);
-
-  console.log("RELEASED KEY");
-
-  // If the result is 1, it means the key was deleted (lock released)
-  return result === 1;
-}
-
-redisClient.on("error", (err) => console.error("Redis Client Error", err));
-let clientConnected = false;
-
-async function connectRedis(): Promise<Boolean | undefined> {
-  try {
-    if (!clientConnected) {
-      await redisClient.connect();
-      clientConnected = true;
-    }
-    return true;
-  } catch (error) {
-    console.error(`Connecting to Redis Error : ${error}`);
-    return undefined;
-  }
 }
 
 let isLeader = false;
@@ -229,11 +182,8 @@ export function healthMsg(ws: WebSocket) {
 }
 
 export async function leaderElection() {
-  const redisConnection = await connectRedis();
-  if (redisConnection) {
-    leaderPort = await getLeaderFromRedis();
-    checkLeader(leaderPort);
-  } else checkLeader(null);
+  leaderPort = await getLeaderFromRedis();
+  checkLeader(leaderPort);
 }
 
 export async function manageDatabaseCluster() {

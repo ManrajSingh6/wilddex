@@ -19,6 +19,7 @@ import {
   leaderElection,
 } from "./leader-election/leaderElection";
 import { WebSocket } from "ws";
+import { connectRedis } from "./leader-election/redis";
 
 dotenv.config();
 
@@ -32,6 +33,8 @@ export const replicaDbClient = createDbClient(
 export const replica2DbClient = createDbClient(
   process.env.REPLICA2_DATABASE_URL ?? ""
 );
+
+connectRedis().then(() => {});
 
 type dbClientType = typeof dbClient;
 
