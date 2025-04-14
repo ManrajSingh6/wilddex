@@ -15,6 +15,7 @@ import {
   leaderMsg,
   healthMsg,
   manageDatabaseCluster,
+  syncDBsNormally
 } from "./leader-election/leaderElection";
 import { WebSocket } from "ws";
 
@@ -118,10 +119,11 @@ wsServer.on("connection", (ws: WebSocket) => {
 });
 
 const job = new CronJob(
-  "* * * * * *", // every seconds
+  "5 * * * * *", // every seconds
   async () => {
     // Wrap manageDatabaseCluster in an async function
     await manageDatabaseCluster();
+    await syncDBsNormally();
   }, // onTick
   null, // onComplete
   true, // start

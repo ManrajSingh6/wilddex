@@ -3,6 +3,7 @@ import { databaseHealth } from "./db-health-sync";
 import { WebSocket } from "ws";
 import dotenv from "dotenv";
 import { syncAllData } from "../db/synchronisation";
+import { checkDataDBs } from "../db/synchronisation";
 import {
   activeDBs,
   dbClient,
@@ -327,5 +328,23 @@ export async function manageDatabaseCluster() {
     console.log("The status of DBs after leader checkup:");
     // console.log("Down DBs: ", downDBs);
     // console.log("Active DBs: ", activeDBs);
+  }
+}
+
+
+export async function syncDBsNormally() {
+  const LE = await leader_election();
+
+  if (isLeader) {
+    console.log(
+      "Leader Performing Sync"
+    );
+
+    if (activeDBs.length > 1){
+      console.log("Performing Database sync on Active Dbs");
+    
+      checkDataDBs(activeDBs[0], activeDBs[1]);
+      if (activeDBs.length >= 2) checkDataDBs(activeDBs[0], activeDBs[2]);
+    }
   }
 }
