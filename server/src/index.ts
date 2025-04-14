@@ -123,7 +123,7 @@ wsServer.on("connection", (ws: WebSocket) => {
 });
 
 const job = new CronJob(
-  "5 * * * * *", // every seconds
+  "*/10 * * * * *", // every 10 seconds
   async () => {
     // Wrap manageDatabaseCluster in an async function
     await leaderElection();

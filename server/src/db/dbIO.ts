@@ -7,34 +7,84 @@ import {
   InferInsertModel,
   InferSelectModel,
 } from "drizzle-orm";
+import { redlock } from "../leader-election/redis";
+import { Lock } from "redlock";
+
+const REDLOCK_KEY = "locks:databaseWrite";
+const TTL = 10000; // 10 seconds
 
 export async function writeToDatabases<T extends PgTable>(
   dbTable: T,
   dbInsert: InferInsertModel<T>
 ) {
-  return await Promise.all(
-    activeDBs.map(async (client) => {
-      try {
-        const insertSuccess = await client
-          .insert(dbTable)
-          .values(dbInsert)
-          .returning();
+  let lock: Lock | undefined;
 
-        if (!insertSuccess || insertSuccess.length === 0) {
+  console.log(`Attempting to acquire distributed write lock`);
+
+  try {
+    lock = await redlock.acquire([REDLOCK_KEY], TTL);
+
+    const results = await Promise.all(
+      activeDBs.map(async (client) => {
+        try {
+          const insertSuccess = await client
+            .insert(dbTable)
+            .values(dbInsert)
+            .returning();
+
+          if (!insertSuccess || insertSuccess.length === 0) {
+            return undefined;
+          }
+
+          const insertedRow = insertSuccess[0];
+
+          return insertedRow as InferSelectModel<T>;
+        } catch (error) {
+          console.error(
+            `Error writing to database ${client} for table ${dbTable}: ${error}`
+          );
           return undefined;
         }
+      })
+    );
 
-        const insertedRow = insertSuccess[0];
-
-        return insertedRow as InferSelectModel<T>;
-      } catch (error) {
-        console.error(
-          `Error writing to database ${client} for table ${dbTable}: ${error}`
-        );
-        return undefined;
+    return results;
+  } catch (error) {
+    console.error(`Error acquiring distributed write lock: ${error}`);
+    return [];
+  } finally {
+    if (lock) {
+      try {
+        await lock.release();
+      } catch (releaseError) {
+        console.error(`Error releasing lock: ${releaseError}`);
       }
-    })
-  );
+    }
+  }
+
+  // return await Promise.all(
+  //   activeDBs.map(async (client) => {
+  //     try {
+  //       const insertSuccess = await client
+  //         .insert(dbTable)
+  //         .values(dbInsert)
+  //         .returning();
+
+  //       if (!insertSuccess || insertSuccess.length === 0) {
+  //         return undefined;
+  //       }
+
+  //       const insertedRow = insertSuccess[0];
+
+  //       return insertedRow as InferSelectModel<T>;
+  //     } catch (error) {
+  //       console.error(
+  //         `Error writing to database ${client} for table ${dbTable}: ${error}`
+  //       );
+  //       return undefined;
+  //     }
+  //   })
+  // );
 }
 
 export async function readFromDatabases<T extends PgTable>(

@@ -1,5 +1,6 @@
 import { createClient, RedisClientType } from "redis";
 import dotenv from "dotenv";
+import Redlock from "redlock";
 
 dotenv.config();
 
@@ -20,4 +21,17 @@ async function connectRedis(): Promise<void> {
   }
 }
 
-export { redisClient, connectRedis };
+const redlock = new Redlock([redisClient], {
+  retryCount: 10,
+  retryDelay: 200, // time in ms
+  retryJitter: 200, // time in ms
+});
+
+redlock.on("clientError", (err) => {
+  console.error(
+    "A redis error has occurred when trying to create redlock instance:",
+    err
+  );
+});
+
+export { redisClient, connectRedis, redlock };
