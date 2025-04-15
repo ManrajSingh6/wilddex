@@ -17,12 +17,12 @@ export async function fetchWithProxy(
     "") as string;
 
   for(var fetchTries = 0; fetchTries < maxRetries; fetchTries++) {
+    console.log(`Primary proxy fetch attempt # ${fetchTries+1}`);
     try {
       console.log(`Primary Proxy URL: ${primaryProxyUrl}`);
       const primaryHealthCheck = await fetch(`${primaryProxyUrl}/health`);
 
       if (primaryHealthCheck.ok) {
-        console.log(`Primary proxy fetch attempt # ${fetchTries}`);
         const response = await fetch(`${primaryProxyUrl}/api/${endpoint}`, {
           method,
           headers,
@@ -50,10 +50,11 @@ export async function fetchWithProxy(
   }
 
   for(var fetchTries = 0; fetchTries < maxRetries; fetchTries++) {
+    console.log(`Backup proxy fetch attempt # ${fetchTries+1}`);
     try {
       console.log(`Backup Proxy URL: ${backupProxyUrl}`);
       const backupHealthCheck = await fetch(`${backupProxyUrl}/health`);
-      console.log(`Backup proxy fetch attempt # ${fetchTries}`);
+
       if (backupHealthCheck.ok) {
         const response = await fetch(`${backupProxyUrl}/api/${endpoint}`, {
           method,
