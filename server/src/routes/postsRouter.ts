@@ -190,8 +190,6 @@ postsRouter.post("/create", async (req: CreatePostRequestBody, res) => {
 
   const openRouterResponseJSON = await openRouterResponse.json();
 
-  // console.log(openRouterResponseJSON.choices[0].message.content);
-
   const openRouterResponseText =
     openRouterResponseJSON.choices[0].message.content;
 

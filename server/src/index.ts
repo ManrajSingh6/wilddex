@@ -1,14 +1,9 @@
 import dotenv from "dotenv";
 import express from "express";
 import { router } from "./routes/router";
-import { Server } from "socket.io";
 import { getFormattedApiResponse, HTTP_CODES } from "./utils/constants";
 import { createDbClient } from "./db/db";
-import {
-  AuthenticatedSocket,
-  authenticateSocketToken,
-  authenticateToken,
-} from "./middleware/authMiddleware";
+import { authenticateToken } from "./middleware/authMiddleware";
 import { CronJob } from "cron";
 import {
   electionMsg,
@@ -58,29 +53,9 @@ app.get("/api/health", (_req, res) => {
 });
 
 const server = app.listen(port, () => {
-  console.log(`🐢 Server running at: http://localhost:${port}`);
+  console.info(`🐢 Server running at: http://localhost:${port}`);
 });
 const wsServer = new WebSocket.Server({ server: server });
-
-export const io = new Server(server);
-
-io.use(authenticateSocketToken);
-
-io.on("connection", (socket: AuthenticatedSocket) => {
-  const userId = socket.user?.id;
-  console.log("New Client Connected with ID: ", userId);
-
-  if (!userId) {
-    socket.disconnect();
-    return;
-  }
-
-  socket.join(userId.toString());
-
-  socket.on("disconnect", () => {
-    console.log("Client Disconnected with ID: ", userId);
-  });
-});
 
 wsServer.on("connection", (ws: WebSocket) => {
   ws.on("message", async (message: string) => {
@@ -115,10 +90,13 @@ new CronJob(
 (async () => {
   try {
     await new Promise((resolve) => setTimeout(resolve, 5000)); // Wait for 5 seconds
-    console.log("🔄 Running manageDatabaseCluster on cold start...");
+    console.info("(DB JOB) Running manageDatabaseCluster on cold start...");
     await manageDatabaseCluster();
   } catch (error) {
-    console.error("❌ Error running manageDatabaseCluster on startup:", error);
+    console.error(
+      "(DB JOB) Error running manageDatabaseCluster on cold start:",
+      error
+    );
   }
 })();
 

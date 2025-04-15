@@ -48,20 +48,17 @@ export async function syncAllData(
   let schema = [usersTable, postsTable, upvotesTable];
 
   try {
-    console.log("Starting full sync...\n");
+    console.info("(DB JOB) Starting full sync...\n");
 
     for (const [tableName, table] of Object.entries(schema)) {
-      console.log(`Fetching data from src: ${tableName}`);
       const data = await src.select().from(table);
 
-      console.log(`Inserting into target: ${tableName}`);
       if (data.length > 0) {
         await target.insert(table).values(data);
       }
-      console.log(`Synced table: ${tableName}\n`);
     }
 
-    console.log("Database sync complete.");
+    console.info("(DB JOB) Database sync complete.");
   } catch (error) {
     console.error("Error during DB synchronization:", error);
   }
@@ -93,7 +90,7 @@ async function syncTable(
   const rMap1 = new Map(replicaRows.map((row) => [uniqueKey(row), row]));
 
   if (mapsAreEqual(pMap, rMap1)) {
-    console.log(`✅ {} and Replica are already in sync.`);
+    console.info(`(DB JOB) DB1 and DB2 are already in sync.`);
     return;
   }
 

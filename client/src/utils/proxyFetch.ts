@@ -21,9 +21,9 @@ export async function fetchWithProxy(
     primaryFetchTries < MAX_RETRIES;
     primaryFetchTries++
   ) {
-    console.log(`Primary proxy fetch attempt # ${primaryFetchTries + 1}`);
+    console.info(`Primary proxy fetch attempt # ${primaryFetchTries + 1}`);
     try {
-      console.log(`Primary Proxy URL: ${primaryProxyUrl}`);
+      console.info(`Primary Proxy URL: ${primaryProxyUrl}`);
       const primaryHealthCheck = await fetch(`${primaryProxyUrl}/health`);
 
       if (primaryHealthCheck.ok) {
@@ -59,9 +59,9 @@ export async function fetchWithProxy(
     backupFetchTries < MAX_RETRIES;
     backupFetchTries++
   ) {
-    console.log(`Backup proxy fetch attempt # ${backupFetchTries + 1}`);
+    console.info(`Backup proxy fetch attempt # ${backupFetchTries + 1}`);
     try {
-      console.log(`Backup Proxy URL: ${backupProxyUrl}`);
+      console.info(`Backup Proxy URL: ${backupProxyUrl}`);
       const backupHealthCheck = await fetch(`${backupProxyUrl}/health`);
 
       if (backupHealthCheck.ok) {

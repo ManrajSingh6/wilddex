@@ -21,7 +21,7 @@ export async function writeToDatabases<T extends PgTable>(
 ) {
   let lock: Lock | undefined;
 
-  console.log(`Attempting to acquire distributed write lock`);
+  console.info(`(SYNCH) Attempting to acquire distributed write lock`);
 
   try {
     lock = await redlock.acquire([REDLOCK_KEY], TTL);
@@ -142,7 +142,7 @@ export async function deleteFromDatabases<T extends PgTable>(
   try {
     lock = await redlock.acquire([REDLOCK_DELETE_KEY], TTL);
 
-    console.log(`Attempting to acquire distributed delete lock`);
+    console.info(`(SYNCH) Attempting to acquire distributed delete lock`);
 
     const results = await Promise.all(
       activeDBs.map(async (db) => {
