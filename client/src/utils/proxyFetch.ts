@@ -16,8 +16,8 @@ export async function fetchWithProxy(
   const backupProxyUrl = (import.meta.env.VITE_BACKUP_PROXY_URL ||
     "") as string;
 
-  for(var fetchTries = 0; fetchTries < maxRetries; fetchTries++) {
-    console.log(`Primary proxy fetch attempt # ${fetchTries+1}`);
+  for (let fetchTries = 0; fetchTries < maxRetries; fetchTries++) {
+    console.log(`Primary proxy fetch attempt # ${fetchTries + 1}`);
     try {
       console.log(`Primary Proxy URL: ${primaryProxyUrl}`);
       const primaryHealthCheck = await fetch(`${primaryProxyUrl}/health`);
@@ -29,28 +29,29 @@ export async function fetchWithProxy(
           body,
         });
 
-        if (response.ok || fetchTries === maxRetries-1) {
-          return response
-        }
-        
-        if (response.status === 404) {
-          return response
+        if (response.ok || fetchTries === maxRetries - 1) {
+          return response;
         }
 
+        if (response.status === 404) {
+          return response;
+        }
       } else {
-        if(fetchTries === maxRetries-1) {
-          console.warn("Primary proxy is down. Attempting to use backup proxy.");
+        if (fetchTries === maxRetries - 1) {
+          console.warn(
+            "Primary proxy is down. Attempting to use backup proxy."
+          );
         }
       }
     } catch (error) {
-      if (fetchTries === maxRetries-1) {
+      if (fetchTries === maxRetries - 1) {
         console.error(`Error in primary proxy fetch: ${error}`);
       }
     }
   }
 
-  for(var fetchTries = 0; fetchTries < maxRetries; fetchTries++) {
-    console.log(`Backup proxy fetch attempt # ${fetchTries+1}`);
+  for (let fetchTries = 0; fetchTries < maxRetries; fetchTries++) {
+    console.log(`Backup proxy fetch attempt # ${fetchTries + 1}`);
     try {
       console.log(`Backup Proxy URL: ${backupProxyUrl}`);
       const backupHealthCheck = await fetch(`${backupProxyUrl}/health`);
@@ -62,21 +63,20 @@ export async function fetchWithProxy(
           body,
         });
 
-        if (response.ok || fetchTries === maxRetries-1) {
-          return response
-        }
-        
-        if (response.status === 404) {
-          return response
+        if (response.ok || fetchTries === maxRetries - 1) {
+          return response;
         }
 
+        if (response.status === 404) {
+          return response;
+        }
       } else {
-        if(fetchTries === maxRetries-1) {
+        if (fetchTries === maxRetries - 1) {
           throw new Error("Both proxies are down.");
         }
       }
     } catch (error) {
-      if(fetchTries === maxRetries-1) {
+      if (fetchTries === maxRetries - 1) {
         console.error(`Error in backup proxy fetch: ${error}`);
       }
     }
