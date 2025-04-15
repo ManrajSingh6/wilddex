@@ -24,7 +24,7 @@ async function migrateDatabases(): Promise<void> {
         migrationsFolder: "drizzle",
       });
 
-      console.log(`Finished migrating ${url}`);
+      console.info(`Finished migrating ${url}`);
     } catch (error) {
       console.error(error);
       console.error(
@@ -37,9 +37,9 @@ async function migrateDatabases(): Promise<void> {
 
 migrateDatabases()
   .then(() => {
-    console.log("🏁 All migrations complete");
+    console.info("All migrations complete");
     process.exit(0);
   })
   .catch((err) => {
-    console.error("❌ Migration process failed:", err);
+    console.error("Migration process failed:", err);
   });

@@ -64,7 +64,9 @@ export async function getUserById(id: number): Promise<User | undefined> {
   }
 }
 
-export async function getUserByEmail(email: string): Promise<User | undefined> {
+export async function getUserByEmail(
+  email: string
+): Promise<User | undefined | null> {
   try {
     const allReads = await readFromDatabases(usersTable, { email });
 
@@ -75,7 +77,7 @@ export async function getUserByEmail(email: string): Promise<User | undefined> {
     const foundUser = allReads.find((user) => user.email === email);
 
     if (!foundUser) {
-      throw new Error(`User with id ${email} not found`);
+      return null;
     }
 
     return foundUser;

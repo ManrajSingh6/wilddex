@@ -1,8 +1,8 @@
-import { createClient } from "redis";
+import dotenv from "dotenv";
 import { databaseHealth } from "./db-health-sync";
 import { WebSocket } from "ws";
-import dotenv from "dotenv";
 import { syncAllData } from "../db/synchronisation";
+import { checkDataDBs } from "../db/synchronisation";
 import {
   activeDBs,
   dbClient,
@@ -12,6 +12,7 @@ import {
   setActiveDbs,
   setDownDbs,
 } from "..";
+import { redisClient } from "./redis";
 
 dotenv.config();
 
@@ -34,53 +35,6 @@ export function getWebSocketUrl(port: number): string | undefined {
   return host ? `ws://${host}:${port}` : undefined;
 }
 
-const REDIS_PORT = process.env.REDIS_PORT || 6379;
-const REDIS_HOST = "redis-cache";
-
-console.log(`Connecting to Redis: redis://${REDIS_HOST}:${REDIS_PORT}`);
-console.log(`PORT: ${PORT}`);
-
-const redisClient = createClient({
-  url: `redis://${REDIS_HOST}:${REDIS_PORT}`,
-});
-
-async function acquireLock(key: string, ttl: number): Promise<boolean> {
-  console.log("TRYING TO GET KEY");
-  const result: string | null = await redisClient.set(key, "locked", {
-    NX: true, // "NX" means set the key only if it does not already exist
-    PX: ttl, // "PX" sets the expiration time in milliseconds
-  });
-  console.log(`RESULT: ${result}`);
-  return result === "OK"; // Lock acquired successfully
-}
-
-async function releaseLock(key: string): Promise<boolean> {
-  console.log("TRYING TO RELEASE KEY");
-
-  // Use the DEL command to delete the key
-  const result: number = await redisClient.del(key);
-
-  console.log("RELEASED KEY");
-
-  // If the result is 1, it means the key was deleted (lock released)
-  return result === 1;
-}
-redisClient.on("error", (err) => console.error("Redis Client Error", err));
-let clientConnected = false;
-
-async function connectRedis(): Promise<Boolean | undefined> {
-  try {
-    if (!clientConnected) {
-      await redisClient.connect();
-      clientConnected = true;
-    }
-    return true;
-  } catch (error) {
-    console.error(`Connecting to Redis Error : ${error}`);
-    return undefined;
-  }
-}
-
 let isLeader = false;
 let leaderPort: number | null = null;
 let running = false;
@@ -95,12 +49,11 @@ function failureDetector(leaderPort: number): Promise<boolean> {
     const wsURL = getWebSocketUrl(leaderPort);
     if (!wsURL) {
       console.error(
-        `Cant find wsURL from peerport mapping, PORT : ${leaderPort}`
+        `(LE) Cant find wsURL from peerport mapping, PORT : ${leaderPort}`
       );
       return;
     }
     const ws = new WebSocket(wsURL);
-    // const ws = new WebSocket(`ws://localhost:${id}`);
     let responded = false;
 
     ws.on("open", () => {
@@ -110,7 +63,7 @@ function failureDetector(leaderPort: number): Promise<boolean> {
     ws.on("message", (msg: string) => {
       const data = JSON.parse(msg);
       if (data.type === "ok") {
-        console.log(`PORT ${PORT}: Leader PORT ${leaderPort} is alive!`);
+        console.log(`(LE) PORT ${PORT}: Leader PORT ${leaderPort} is alive!`);
         responded = true;
         resolve(false);
       }
@@ -131,7 +84,7 @@ function failureDetector(leaderPort: number): Promise<boolean> {
 }
 
 function initiateElection(): void {
-  console.log(`Node ${PORT} initiating election...`);
+  console.log(`(LE) Node ${PORT} initiating election...`);
   running = true;
   PEER_PORTS.forEach((peerPort) => {
     if (peerPort > PORT) {
@@ -143,15 +96,14 @@ function initiateElection(): void {
         return;
       }
       const ws = new WebSocket(wsURL);
-      console.log(`PORT : ${PORT} send election msg to ${peerPort}`);
+      console.log(`(LE) PORT: ${PORT} send election msg to ${peerPort}`);
       ws.on("open", () => {
         ws.send(JSON.stringify({ type: "election", port: PORT }));
       });
       ws.on("message", (msg: string) => {
         const data = JSON.parse(msg);
-        console.log(data);
         if (data.type === "bullied") {
-          console.log(`PORT: ${PORT} got bullied by ${peerPort}`);
+          console.log(`(LE) PORT: ${PORT} got bullied by ${peerPort}`);
           running = false;
         }
         ws.close();
@@ -174,7 +126,7 @@ function initiateElection(): void {
 function declareLeadership(): void {
   isLeader = true;
   leaderPort = PORT;
-  console.log(`Node ${PORT} is the new leader!`);
+  console.log(`(LE) Node ${PORT} is the new leader!`);
   redisClient.set(LEADER_KEY, PORT.toString());
   notifyPeers();
 }
@@ -198,27 +150,27 @@ function notifyPeers(): void {
 }
 
 async function checkLeader(leaderPort: number | null): Promise<void> {
-  isLeader = PORT == leaderPort;
-  console.log(`Current Leader: ${leaderPort}`);
+  isLeader = PORT === leaderPort;
+  console.log(`(LE) Current Leader: ${leaderPort}`);
   if (!leaderPort || (leaderPort < PORT && !running)) {
     initiateElection();
   } else if (!isLeader) {
     const failed = await failureDetector(leaderPort);
     if (failed) {
-      console.log(`Leader ${leaderPort} failed. Starting election.`);
+      console.log(`(LE) Leader ${leaderPort} failed. Starting election.`);
       initiateElection();
     }
   }
 }
 
 export function electionMsg(port: number, ws: WebSocket) {
-  console.log(`Node ${PORT} received election message from ${port}`);
+  console.log(`(LE) Node ${PORT} received election message from ${port}`);
   ws.send(JSON.stringify({ type: "bullied" }));
   if (!running) initiateElection();
 }
 
 export function leaderMsg(leader: number, ws: WebSocket) {
-  console.log(`Node ${PORT} acknowledges new leader: ${leader}`);
+  console.log(`(LE) Node ${PORT} acknowledges new leader: ${leader}`);
   isLeader = false;
   leaderPort = leader;
 }
@@ -227,37 +179,30 @@ export function healthMsg(ws: WebSocket) {
   ws.send(JSON.stringify({ type: "ok" }));
 }
 
-export async function leader_election() {
-  const redisConnection = await connectRedis();
-  if (redisConnection) {
-    leaderPort = await getLeaderFromRedis();
-    checkLeader(leaderPort);
-  } else checkLeader(null);
+export async function leaderElection() {
+  leaderPort = await getLeaderFromRedis();
+  checkLeader(leaderPort);
 }
 
 export async function manageDatabaseCluster() {
-  const LE = await leader_election();
-
   if (isLeader) {
-    console.log(
-      "Leader Checking the DBs health\nBefore Health Check the DBs looklike"
-    );
-    // console.log("Down DBs: ", downDBs);
-    // console.log("Active DBs: ", activeDBs);
+    console.info("(MANAGE DB CLUSTER) Database Health Checkup (By Leader)...");
 
     const dbPrimaryHealth = await databaseHealth("primary");
     const dbReplicaHealth = await databaseHealth("replica");
     const dbReplica2Health = await databaseHealth("replica2");
 
-    if (dbPrimaryHealth != undefined) isPrimaryDBAlive = dbPrimaryHealth;
-    if (dbReplicaHealth != undefined) isReplicaDBAlive = dbReplicaHealth;
-    if (dbReplica2Health != undefined) isReplica2DBAlive = dbReplica2Health;
+    if (dbPrimaryHealth !== undefined) isPrimaryDBAlive = dbPrimaryHealth;
+    if (dbReplicaHealth !== undefined) isReplicaDBAlive = dbReplicaHealth;
+    if (dbReplica2Health !== undefined) isReplica2DBAlive = dbReplica2Health;
 
     if (isPrimaryDBAlive) {
-      console.log("DB1 is alive");
+      console.info("(MANAGE DB CLUSTER) DB1 is alive");
       //see if it came back alive after being down
       if (downDBs.includes(dbClient)) {
-        console.log("DB1 just came back alive again\nsyncing all data...");
+        console.info(
+          "(MANAGE DB CLUSTER) DB1 just came back alive again - syncing all data..."
+        );
 
         syncAllData(activeDBs[0], dbClient);
         activeDBs.push(dbClient);
@@ -266,9 +211,9 @@ export async function manageDatabaseCluster() {
         setDownDbs(filteredDownDbs);
       }
     } else {
-      console.log("DB1 is down");
+      console.info("(MANAGE DB CLUSTER) DB1 is down");
       if (!downDBs.includes(dbClient)) {
-        console.log("Removing DB1 form active DB group");
+        console.info("(MANAGE DB CLUSTER) Removing DB1 form active DB group");
         downDBs.push(dbClient);
 
         const filteredActiveDBs = activeDBs.filter((adb) => adb !== dbClient);
@@ -276,10 +221,12 @@ export async function manageDatabaseCluster() {
       }
     }
     if (isReplicaDBAlive) {
-      console.log("DB2 is alive");
+      console.info("(MANAGE DB CLUSTER) DB2 is alive");
       //see if it came back alive after being down
       if (downDBs.includes(replicaDbClient)) {
-        console.log("DB2 just came back alive again\nsyncing all data...");
+        console.info(
+          "(MANAGE DB CLUSTER) DB2 just came back alive again - syncing all data..."
+        );
 
         syncAllData(activeDBs[0], replicaDbClient);
         activeDBs.push(replicaDbClient);
@@ -289,9 +236,9 @@ export async function manageDatabaseCluster() {
         setDownDbs(filteredDownDbs);
       }
     } else {
-      console.log("DB2 is down");
+      console.info("(MANAGE DB CLUSTER) DB2 is down");
       if (!downDBs.includes(replicaDbClient)) {
-        console.log("Removing DB1 form active DB group");
+        console.info("(MANAGE DB CLUSTER) Removing DB1 form active DB group");
         downDBs.push(replicaDbClient);
         const filteredActiveDBs = activeDBs.filter(
           (adb) => adb !== replicaDbClient
@@ -300,10 +247,12 @@ export async function manageDatabaseCluster() {
       }
     }
     if (isReplica2DBAlive) {
-      console.log("DB3 is alive");
+      console.info("(MANAGE DB CLUSTER) DB3 is alive");
       //see if it came back alive after being down
       if (downDBs.includes(replica2DbClient)) {
-        console.log("DB3 just came back alive again\nsyncing all data...");
+        console.info(
+          "(MANAGE DB CLUSTER) DB3 just came back alive again - syncing all data..."
+        );
 
         syncAllData(activeDBs[0], replica2DbClient);
         activeDBs.push(replica2DbClient);
@@ -313,9 +262,9 @@ export async function manageDatabaseCluster() {
         setDownDbs(filteredDownDbs);
       }
     } else {
-      console.log("DB3 is down");
+      console.info("(MANAGE DB CLUSTER) DB3 is down");
       if (!downDBs.includes(replica2DbClient)) {
-        console.log("Removing DB3 form active DB group");
+        console.info("(MANAGE DB CLUSTER) Removing DB3 form active DB group");
         downDBs.push(replica2DbClient);
         const filteredActiveDBs = activeDBs.filter(
           (adb) => adb !== replica2DbClient
@@ -324,8 +273,22 @@ export async function manageDatabaseCluster() {
       }
     }
 
-    console.log("The status of DBs after leader checkup:");
-    // console.log("Down DBs: ", downDBs);
-    // console.log("Active DBs: ", activeDBs);
+    console.info(
+      "(MANAGE DB CLUSTER) Database Health Checkup (By Leader)... Finished"
+    );
+  }
+}
+
+export async function syncDBsNormally() {
+  if (isLeader) {
+    console.info("(DB SYNC) Leader Performing Sync...");
+
+    if (activeDBs.length > 1) {
+      console.info("(DB SYNC) Performing Database Sync Active DBs...");
+
+      checkDataDBs(activeDBs[0], activeDBs[1]);
+
+      if (activeDBs.length >= 2) checkDataDBs(activeDBs[0], activeDBs[2]);
+    }
   }
 }

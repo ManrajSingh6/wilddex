@@ -46,7 +46,7 @@ docker compose up --build
 ## Technology Stack
 
 - **Frontend**: React
-- **Backend**: Node.js (Express and SocketIO)
+- **Backend**: Node.js (Express)
 - **Database**: PostgreSQL
 - **Storage**: Supabase
 - **Machine Learning**: TensorFlow

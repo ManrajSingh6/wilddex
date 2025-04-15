@@ -71,6 +71,30 @@ services:
     networks:
       - wilddex-network
 
+  redis-cache-2:
+    image: redis
+    restart: always
+    ports:
+      - "6380:6379"
+    env_file:
+      - "./server/.env"
+    volumes:
+      - redis-cache-2:/data
+    networks:
+      - wilddex-network
+
+  redis-cache-3:
+    image: redis
+    restart: always
+    ports:
+      - "6381:6379"
+    env_file:
+      - "./server/.env"
+    volumes:
+      - redis-cache-3:/data
+    networks:
+      - wilddex-network
+
   api-1:
     build:
       context: ./server
@@ -194,6 +218,8 @@ volumes:
   pgdata-replica1:
   pgdata-replica2:
   redis-cache:
+  redis-cache-2:
+  redis-cache-3:
 
 networks:
   wilddex-network:
