@@ -1,4 +1,4 @@
-import { PgTable, pgTable } from "drizzle-orm/pg-core";
+import { PgTable } from "drizzle-orm/pg-core";
 import { activeDBs } from "../index";
 import {
   and,
