@@ -13,13 +13,10 @@ import { getFormattedApiResponse, HTTP_CODES } from "../utils/constants";
 import {
   CreatePostInsert,
   CreatePostRequestBody,
-  NewPostNotification,
-  NewPostUpvoteNotification,
   UpvotePostRequestBody,
 } from "../types";
 import { randomUUID } from "crypto";
 import { supabase } from "../supabase/supabase";
-import { io } from "../index";
 import { getUserById } from "../models/authModel";
 
 const SUPABASE_IMAGE_BUCKET = "wilddex-images";
@@ -244,20 +241,6 @@ postsRouter.post("/create", async (req: CreatePostRequestBody, res) => {
     return;
   }
 
-  const newPostNotification: NewPostNotification = {
-    notificationId: randomUUID(),
-    postId: createdPost.id,
-    postTitle: createdPost.animal,
-    timestamp: new Date(),
-    postedBy: {
-      userId: user.id,
-      name: user.name,
-    },
-  };
-
-  // Broadcast the notification to all connected clients
-  io.emit("new-post", newPostNotification);
-
   res.status(HTTP_CODES.OK).json(
     getFormattedApiResponse({
       message: "Post created successfully",
@@ -359,25 +342,6 @@ postsRouter.post("/vote", async (req: UpvotePostRequestBody, res) => {
       })
     );
     return;
-  }
-
-  if (req.body.operation === "increment") {
-    const postUpvotes = await getPostUpvotes(postId);
-    if (postUpvotes) {
-      const newUpvoteNotif: NewPostUpvoteNotification = {
-        notificationId: randomUUID(),
-        postId,
-        postTitle: post.animal,
-        upvoteCount: postUpvotes,
-        likedBy: {
-          userId: likedByUser.id,
-          name: likedByUser.name,
-        },
-        timestamp: new Date(),
-      };
-
-      io.to(post.userId.toString()).emit("new-upvote", newUpvoteNotif);
-    }
   }
 
   res.status(HTTP_CODES.OK).json(
