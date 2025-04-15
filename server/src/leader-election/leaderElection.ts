@@ -283,12 +283,13 @@ export async function syncDBsNormally() {
   if (isLeader) {
     console.info("(DB SYNC) Leader Performing Sync...");
 
+    console.info("(DB_SYNC) ACTIVE DBS : ", activeDBs.length);
     if (activeDBs.length > 1) {
       console.info("(DB SYNC) Performing Database Sync Active DBs...");
 
       checkDataDBs(activeDBs[0], activeDBs[1]);
 
-      if (activeDBs.length >= 2) checkDataDBs(activeDBs[0], activeDBs[2]);
+      if (activeDBs.length > 2) checkDataDBs(activeDBs[0], activeDBs[2]);
     }
   }
 }
