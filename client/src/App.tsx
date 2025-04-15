@@ -4,7 +4,6 @@ import {
   COMMUNITY_POSTS_ROUTE,
   HOME_ROUTE,
   LOGIN_ROUTE,
-  NOTIFICATIONS_ROUTE,
   PROFILE_ROUTE,
   ProtectedRoute,
   REGISTER_ROUTE,
@@ -18,7 +17,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "./components/ui/toaster";
 import { APIProvider } from "@vis.gl/react-google-maps";
 import { CommunityPage } from "./pages/CommunityPage";
-import { NotificationsPage } from "./pages/NotificationsPage";
 import { NotificationsProvider } from "./context/notificationsContext";
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY;
@@ -39,10 +37,6 @@ function App() {
               <Route element={<ProtectedRoute />}>
                 <Route element={<Layout />}>
                   <Route path={HOME_ROUTE} element={<HomePage />} />
-                  <Route
-                    path={NOTIFICATIONS_ROUTE}
-                    element={<NotificationsPage />}
-                  />
                   <Route path={PROFILE_ROUTE} element={<ProfilePage />} />
                   <Route
                     path={COMMUNITY_POSTS_ROUTE}

@@ -4,15 +4,12 @@ import { NavLink } from "react-router-dom";
 import {
   COMMUNITY_POSTS_ROUTE,
   HOME_ROUTE,
-  NOTIFICATIONS_ROUTE,
   PROFILE_ROUTE,
 } from "@/utils/routes";
 import { IoHome, IoLogOut } from "react-icons/io5";
 import { RiUserCommunityLine } from "react-icons/ri";
 import { FaUser } from "react-icons/fa";
 import { useAuth } from "@/hooks/useAuth";
-import { MdNotificationsActive } from "react-icons/md";
-import { useNotifications } from "@/context/notificationsContext";
 
 interface NavbarItemProps {
   readonly text: string;
@@ -42,21 +39,8 @@ const NAVBAR_ITEMS: readonly NavbarItemProps[] = [
 export function Navbar(): JSX.Element {
   const { logout } = useAuth();
 
-  const { newPostUpvoteNotifications, newPostNotifications } =
-    useNotifications();
-
-  const allNotifications = [
-    ...newPostUpvoteNotifications,
-    ...newPostNotifications,
-  ];
-
   const NAV_ITEMS = [
     ...NAVBAR_ITEMS,
-    {
-      text: `Notifications (${allNotifications.length})`,
-      icon: <MdNotificationsActive />,
-      path: NOTIFICATIONS_ROUTE,
-    },
     {
       text: "Logout",
       icon: <IoLogOut />,
