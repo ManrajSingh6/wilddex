@@ -1,27 +1,43 @@
-import { createClient, RedisClientType } from "redis";
+import Client from "ioredis";
 import dotenv from "dotenv";
 import Redlock from "redlock";
 
 dotenv.config();
 
-const redisClient = createClient({
-  url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`,
-}) as unknown as RedisClientType;
-
-redisClient.on("error", (error) => {
-  console.error("Redis client error:", error);
+const redisClient = new Client({
+  host: process.env.REDIS_HOST,
+  port: Number(process.env.REDIS_PORT),
 });
 
-async function connectRedis(): Promise<void> {
-  try {
-    await redisClient.connect();
-    console.log("Redis client connected.");
-  } catch (error) {
-    console.error("Failed to connect to Redis:", error);
-  }
-}
+const redisClientBackup = new Client({
+  host: process.env.REDIS_HOST_2,
+  port: Number(process.env.REDIS_PORT_2),
+});
 
-const redlock = new Redlock([redisClient], {
+const redisClientSecondaryBackup = new Client({
+  host: process.env.REDIS_HOST_3,
+  port: Number(process.env.REDIS_PORT_3),
+});
+
+const REDIS_INSTANCES = [
+  redisClient,
+  redisClientBackup,
+  redisClientSecondaryBackup,
+];
+
+redisClient.on("error", (error) => {
+  console.error("Redis client 1 error:", error);
+});
+
+redisClientBackup.on("error", (error) => {
+  console.error("Redis client 2 error:", error);
+});
+
+redisClientSecondaryBackup.on("error", (error) => {
+  console.error("Redis client 3 error:", error);
+});
+
+const redlock = new Redlock(REDIS_INSTANCES, {
   retryCount: 10,
   retryDelay: 200, // time in ms
   retryJitter: 200, // time in ms
@@ -34,4 +50,4 @@ redlock.on("clientError", (err) => {
   );
 });
 
-export { redisClient, connectRedis, redlock };
+export { redisClient, redlock };

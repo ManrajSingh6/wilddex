@@ -19,7 +19,6 @@ import {
   leaderElection,
 } from "./leader-election/leaderElection";
 import { WebSocket } from "ws";
-import { connectRedis } from "./leader-election/redis";
 
 dotenv.config();
 
@@ -33,8 +32,6 @@ export const replicaDbClient = createDbClient(
 export const replica2DbClient = createDbClient(
   process.env.REPLICA2_DATABASE_URL ?? ""
 );
-
-connectRedis().then(() => {});
 
 type dbClientType = typeof dbClient;
 
@@ -64,26 +61,6 @@ const server = app.listen(port, () => {
   console.log(`🐢 Server running at: http://localhost:${port}`);
 });
 const wsServer = new WebSocket.Server({ server: server });
-
-wsServer.on("connection", (ws: WebSocket) => {
-  ws.on("message", async (message: string) => {
-    const data = JSON.parse(message);
-    if (data.type === "election") {
-      electionMsg(data.port, ws);
-    }
-
-    if (data.type === "leader") {
-      leaderMsg(data.leader, ws);
-    }
-
-    if (data.type === "health") {
-      healthMsg(ws);
-    }
-    ws.close();
-  });
-
-  ws.on("close", () => console.log("Client disconnected"));
-});
 
 export const io = new Server(server);
 
@@ -122,7 +99,7 @@ wsServer.on("connection", (ws: WebSocket) => {
   });
 });
 
-const job = new CronJob(
+new CronJob(
   "*/10 * * * * *", // every 10 seconds
   async () => {
     // Wrap manageDatabaseCluster in an async function
